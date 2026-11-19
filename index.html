@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeamGuard | Team Inspection</title>
+<style>
+:root{--bg:#f4f6fb;--panel:#fff;--text:#172033;--muted:#68748a;--line:#e5e9f1;--primary:#3659d9;--soft:#edf1ff;--green:#13865c;--red:#c83d4b;--amber:#a96808;--shadow:0 8px 28px #26365b12}
+[data-theme="dark"]{--bg:#111827;--panel:#1b2535;--text:#edf2fb;--muted:#aab6ca;--line:#303d51;--primary:#8298ff;--soft:#273454;--green:#55c99b;--red:#ff7c87;--amber:#f2bd65;--shadow:0 8px 28px #0003}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,"Noto Sans Bengali",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:10px 14px;background:var(--primary);color:white;font-weight:650}.secondary{background:var(--soft);color:var(--primary)}.danger{background:#ffebed;color:#b42332}.muted{color:var(--muted)}.hidden{display:none!important}
+header{height:68px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 max(18px,calc((100% - 1180px)/2));position:sticky;top:0;z-index:5}.brand{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:850;letter-spacing:-.5px}.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#3659d9,#7a8fff);display:grid;place-items:center;color:white;font-weight:900}.header-actions{display:flex;gap:8px;align-items:center}
+main{max-width:1180px;margin:26px auto;padding:0 18px}.login-wrap{max-width:430px;margin:8vh auto}.card{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:20px;box-shadow:var(--shadow)}.login-wrap h1{margin:8px 0}.field{display:grid;gap:6px;margin:13px 0}.field label{font-size:13px;color:var(--muted);font-weight:650}.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);outline:none}.field textarea{min-height:75px;resize:vertical}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.layout{display:grid;grid-template-columns:230px 1fr;gap:20px}.sidebar{height:max-content;position:sticky;top:88px}.nav{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:transparent;color:var(--muted);margin:3px 0}.nav.active{background:var(--soft);color:var(--primary)}.content{min-width:0}.page-title{margin:0 0 5px;font-size:25px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}.stat strong{display:block;font-size:27px;margin-top:5px}.stat small{color:var(--muted)}.section{margin-top:18px}.section h3{margin:0 0 12px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}table{width:100%;border-collapse:collapse;min-width:650px;background:var(--panel)}th,td{padding:12px 13px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{color:var(--muted);font-weight:700;background:var(--bg)}tr:last-child td{border-bottom:0}.pill{display:inline-block;padding:4px 8px;border-radius:30px;font-size:11px;font-weight:750;background:var(--soft);color:var(--primary)}.pill.red{background:#ffebed;color:#b42332}.pill.green{background:#e5f7ef;color:#13734e}.pill.amber{background:#fff3dc;color:#94600d}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.tabs button{background:var(--bg);color:var(--muted)}.tabs button.active{background:var(--primary);color:#fff}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.empty{text-align:center;padding:28px;color:var(--muted)}.notice{padding:12px 14px;border-radius:11px;background:var(--soft);color:var(--primary);font-size:13px;line-height:1.5}.actions{display:flex;gap:7px;flex-wrap:wrap}.small{padding:7px 10px;font-size:12px}.checkrow{display:flex;align-items:center;gap:8px}.footer-note{font-size:12px;color:var(--muted);margin-top:20px;line-height:1.5}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.sidebar{position:static}.navs{display:flex;overflow:auto}.nav{white-space:nowrap;width:auto}.stats{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.page-title{font-size:22px}}
+@media(max-width:430px){header{padding:0 12px}.brand{font-size:17px}.header-actions button{padding:8px}.stats{gap:8px}.stat{padding:12px}.stat strong{font-size:23px}}
+@media print{header,.sidebar,.header-actions,.actions button,.navs,.no-print{display:none!important}body{background:#fff;color:#111}.card,.stat{box-shadow:none;border:0;padding:0}.layout{display:block}main{max-width:none;margin:0;padding:0}.content{width:100%}table{min-width:0;font-size:10px}th,td{padding:6px;color:#111}th{background:#eee!important}.pill{border:1px solid #aaa;color:#111;background:#fff}.report-photo{max-width:65px;max-height:65px}}
+
+/* TeamGuard refreshed visual theme — presentation only */
+:root{
+ --bg:#f3f6fc;--panel:#ffffff;--text:#17233b;--muted:#71809a;--line:#e4eaf4;
+ --primary:#4f46e5;--soft:#eef0ff;--green:#0f9b72;--red:#dc4658;--amber:#b7791f;
+ --shadow:0 14px 38px rgba(31,48,86,.08);
+}
+[data-theme="dark"]{
+ --bg:#0b1220;--panel:#141f32;--text:#edf3ff;--muted:#9baac2;--line:#293851;
+ --primary:#9295ff;--soft:#252c4d;--green:#52d6aa;--red:#ff8190;--amber:#f4c36d;
+ --shadow:0 16px 40px rgba(0,0,0,.24);
+}
+body{
+ background:
+  radial-gradient(ellipse at 8% 0%,rgba(99,102,241,.10),transparent 34%),
+  radial-gradient(ellipse at 96% 18%,rgba(14,165,233,.08),transparent 30%),
+  var(--bg);
+ font-family:Inter,"Segoe UI",system-ui,"Noto Sans Bengali",sans-serif;
+ letter-spacing:.05px;
+}
+header{
+ height:74px;background:color-mix(in srgb,var(--panel) 88%,transparent);
+ backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+ border-bottom:1px solid var(--line);box-shadow:0 4px 22px rgba(24,39,75,.035);
+}
+.brand{font-size:21px;letter-spacing:-.7px}
+.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(145deg,#4f46e5,#06b6d4);box-shadow:0 7px 18px rgba(79,70,229,.25)}
+main{margin:32px auto}
+.card,.stat{
+ border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
+ border-radius:20px;box-shadow:var(--shadow);
+}
+.card{padding:23px}
+.login-wrap{
+ position:relative;overflow:hidden;margin:9vh auto;padding:32px;
+ background:linear-gradient(155deg,var(--panel),color-mix(in srgb,var(--panel) 90%,var(--soft)));
+}
+.login-wrap:before{
+ content:"";position:absolute;width:190px;height:190px;border-radius:50%;
+ background:linear-gradient(135deg,rgba(79,70,229,.14),rgba(6,182,212,.08));
+ right:-75px;top:-90px;pointer-events:none;
+}
+.login-wrap>*{position:relative}
+.login-wrap h1{font-size:27px;letter-spacing:-.8px;margin-top:18px}
+.field{gap:8px;margin:15px 0}
+.field label{font-size:12px;letter-spacing:.2px;text-transform:uppercase}
+.field input,.field select,.field textarea{
+ padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+ transition:border-color .18s,box-shadow .18s,background .18s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+ border-color:var(--primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--primary) 14%,transparent);outline:none;
+}
+button{
+ border-radius:12px;padding:10px 15px;font-weight:700;
+ background:linear-gradient(135deg,var(--primary),#6366f1);
+ box-shadow:0 5px 13px color-mix(in srgb,var(--primary) 19%,transparent);
+ transition:transform .16s,filter .16s,box-shadow .16s;
+}
+button:hover{filter:brightness(1.05);transform:translateY(-1px);box-shadow:0 8px 18px color-mix(in srgb,var(--primary) 22%,transparent)}
+button:active{transform:translateY(0)}
+button.secondary{background:var(--soft);color:var(--primary);box-shadow:none}
+button.danger{background:#fff0f2;color:#c42e43;box-shadow:none}
+[data-theme="dark"] button.danger{background:#422432;color:#ff9aa5}
+.nav{
+ border-radius:12px;padding:12px 13px;font-weight:650;box-shadow:none;
+}
+.nav:hover{background:var(--soft);color:var(--primary);transform:translateX(2px);box-shadow:none}
+.nav.active{background:linear-gradient(100deg,var(--soft),color-mix(in srgb,var(--soft) 65%,var(--panel)));color:var(--primary);box-shadow:inset 3px 0 0 var(--primary)}
+.sidebar{padding:13px}
+.page-title{font-size:28px;letter-spacing:-.8px}
+.stats{gap:14px}
+.stat{padding:19px;background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--panel) 94%,var(--soft)));transition:transform .18s,box-shadow .18s}
+.stat:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(31,48,86,.11)}
+.stat strong{font-size:30px;letter-spacing:-1px}
+.stat small{font-size:12px;font-weight:650;letter-spacing:.15px}
+.section{margin-top:22px}
+.section h3{letter-spacing:-.3px}
+.table-wrap{border-radius:15px;box-shadow:0 5px 18px rgba(31,48,86,.035)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.55px}
+td{font-size:13px}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:color-mix(in srgb,var(--soft) 42%,var(--panel))}
+.pill{padding:5px 10px;letter-spacing:.15px}
+.notice{border:1px solid color-mix(in srgb,var(--primary) 13%,transparent);border-radius:13px}
+.tabs button{box-shadow:none}
+.empty{padding:34px 18px}
+.footer-note{line-height:1.7}
+@media(max-width:800px){
+ main{margin:20px auto}
+ .sidebar{padding:9px}
+ .navs{gap:5px}
+ .nav{padding:10px 12px}
+ .page-title{font-size:24px}
+}
+@media(max-width:430px){
+ .login-wrap{padding:24px 19px;margin:6vh auto}
+ .login-wrap h1{font-size:24px}
+ header{height:66px}
+ .brand{font-size:18px}
+ .card{padding:17px}
+ .stats{gap:9px}
+ .stat{border-radius:15px;padding:13px}
+ .stat strong{font-size:24px}
+}
+
+</style>
+</head>
+<body>
+<header><div class="brand"><div class="logo">TG</div>TeamGuard</div><div class="header-actions"><button class="secondary" id="themeBtn">☾ Theme</button><button class="secondary hidden" id="logoutBtn">Logout</button></div></header>
+<main>
+<section id="login" class="login-wrap card">
+ <div class="logo" style="width:48px;height:48px;font-size:20px">TG</div>
+ <h1>TeamGuard Login</h1><p class="muted">Sign in to your account</p>
+ <div class="field"><label>Username</label><input id="username" placeholder="Username"></div>
+ <div class="field"><label>Password</label><input id="password" type="password" placeholder="••••••••"></div>
+ <button style="width:100%;margin-top:8px" id="loginBtn">Login</button>
+ <div id="loginError" class="muted" style="color:var(--red);margin-top:10px;font-size:13px"></div>
+ <p class="footer-note">Get your leader account credentials from the manager.</p>
+</section>
+<section id="app" class="hidden">
+ <div class="between"><div><h1 class="page-title" id="welcome">Dashboard</h1><div class="muted" id="roleInfo"></div></div><span class="pill" id="today"></span></div>
+ <div class="layout" style="margin-top:18px">
+  <aside class="sidebar card"><div class="navs" id="navs"></div></aside>
+  <div class="content" id="view"></div>
+ </div>
+</section>
+</main>
+<script>
+const KEY='teamguard_demo_v1';
+const initial={users:[{id:'u0',username:'manager',password:'1234',name:'Manager',role:'manager',shift:'Both'}],pickers:[],schedule:[],reports:[]};
+let db=load(),current=null,page='dashboard',scheduleShift='Day';
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||structuredClone(initial)}catch(e){return structuredClone(initial)}}
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function dateISO(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function niceDate(s){if(!s)return '—';return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
+function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function shiftUsers(){return db.users.filter(u=>u.role==='leader'&&(current.role==='manager'||u.shift===current.shift))}
+const SESSION_KEY='teamguard_session_user';
+function openApp(u){current=u;document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('logoutBtn').classList.remove('hidden');document.getElementById('welcome').textContent='Welcome, '+u.name;document.getElementById('roleInfo').textContent=u.role==='manager'?'Manager • Day & Night Shift':'Shift Leader • '+u.shift+' Shift';document.getElementById('today').textContent=niceDate(dateISO());render()}
+function login(){let u=db.users.find(x=>x.username===document.getElementById('username').value.trim()&&x.password===document.getElementById('password').value);if(!u){document.getElementById('loginError').textContent='Incorrect username or password';return}localStorage.setItem(SESSION_KEY,u.id);openApp(u)}
+function logout(){current=null;localStorage.removeItem(SESSION_KEY);document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('logoutBtn').classList.add('hidden')}
+document.getElementById('loginBtn').onclick=login;document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter')login()});document.getElementById('logoutBtn').onclick=logout;
+const savedSessionId=localStorage.getItem(SESSION_KEY);if(savedSessionId){const savedUser=db.users.find(x=>x.id===savedSessionId);if(savedUser)openApp(savedUser);else localStorage.removeItem(SESSION_KEY)}
+document.getElementById('themeBtn').onclick=()=>{let t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('tg_theme',t)};document.documentElement.dataset.theme=localStorage.getItem('tg_theme')||'light';
+function navItems(){return current.role==='manager'?[['dashboard','▦','Overview'],['leaders','♙','Leaders'],['pickers','☷','Pickers & Lines'],['schedule','▦','Weekly Schedule'],['reports','▤','All Reports'],['account','⚙','My Account']]:[['dashboard','▦','My Dashboard'],['inspection','✓','Today Inspection'],['reports','▤','My Reports']]}
+function render(){document.getElementById('navs').innerHTML=navItems().map(([id,ic,n])=>`<button class="nav ${page===id?'active':''}" onclick="go('${id}')">${ic} ${n}</button>`).join('');let f={dashboard:current.role==='manager'?managerHome:leaderHome,leaders:leadersPage,pickers:pickersPage,schedule:schedulePage,reports:reportsPage,inspection:inspectionPage,account:accountPage};(f[page]||f.dashboard)()}
+function go(p){page=p;render()}
+function accountPage(){if(current.role!=='manager'){go('dashboard');return}document.getElementById('view').innerHTML=`<div class="card"><h3>Manager Account Settings</h3><p class="muted">Change your own manager username and password.</p><div class="field"><label>Current Password</label><input id="oldManagerPass" type="password" autocomplete="current-password" placeholder="Enter current password"></div><div class="field"><label>New Username</label><input id="newManagerUser" autocomplete="username" value="${esc(current.username)}"></div><div class="field"><label>New Password</label><input id="newManagerPass" type="password" autocomplete="new-password" placeholder="Leave blank to keep current password"></div><div class="field"><label>Confirm New Password</label><input id="confirmManagerPass" type="password" autocomplete="new-password" placeholder="Re-enter new password"></div><button onclick="updateManagerAccount()">Save Account Changes</button><div id="accountMessage" class="muted" style="margin-top:12px;font-size:13px"></div></div>`}
+function updateManagerAccount(){if(current.role!=='manager')return;let old=val('oldManagerPass'),username=val('newManagerUser'),pass=document.getElementById('newManagerPass').value,confirmPass=document.getElementById('confirmManagerPass').value,msg=document.getElementById('accountMessage');if(old!==current.password){msg.textContent='Current password is incorrect.';return}if(!username){msg.textContent='Username cannot be empty.';return}if(db.users.some(u=>u.id!==current.id&&u.username.toLowerCase()===username.toLowerCase())){msg.textContent='This username is already in use.';return}if(pass||confirmPass){if(pass.length<4){msg.textContent='New password must be at least 4 characters.';return}if(pass!==confirmPass){msg.textContent='New passwords do not match.';return}current.password=pass}current.username=username;save();msg.textContent='Account details updated successfully.';document.getElementById('oldManagerPass').value='';document.getElementById('newManagerPass').value='';document.getElementById('confirmManagerPass').value='';document.getElementById('newManagerUser').value=current.username}
+function stat(label,val){return `<div class="stat"><small>${label}</small><strong>${val}</strong></div>`}
+function managerHome(){let active=db.users.filter(x=>x.role==='leader').length,done=db.reports.filter(r=>r.date===dateISO()).length,scheduled=db.schedule.filter(s=>s.date===dateISO()).length,expired=db.reports.reduce((n,r)=>n+r.items.length,0);document.getElementById('view').innerHTML=`<div class="stats">${stat('Total Pickers',db.pickers.length)}${stat('Shift Leader',active)}${stat("Today's Schedule",scheduled)}${stat('Reports Submitted Today',done)}</div><div class="card section"><div class="between"><h3>Today&#39;s Inspections</h3><button class="small" onclick="go('schedule')">View Schedule</button></div>${todayAssignments()}</div><div class="card section"><h3>Recent Reports</h3>${reportTable(db.reports.slice().sort((a,b)=>b.created.localeCompare(a.created)).slice(0,5))}</div>`}
+function leaderHome(){let mine=db.schedule.filter(s=>s.date===dateISO()&&s.shift===current.shift),done=db.reports.filter(r=>r.leaderId===current.id&&r.date===dateISO());document.getElementById('view').innerHTML=`<div class="stats">${stat('Assigned Lines Today',mine.length)}${stat('Reports Today',done.length)}${stat("My Team's Pickers",db.pickers.filter(p=>p.shift===current.shift).length)}${stat('Total Submitted Reports',db.reports.filter(r=>r.leaderId===current.id).length)}</div><div class="card section"><h3>Today&#39;s Tasks</h3>${mine.length?mine.map(s=>assignmentCard(s)).join(''):'<div class="empty">No lines have been assigned for today.</div>'}</div>`}
+function todayAssignments(){let a=db.schedule.filter(s=>s.date===dateISO());return a.length?a.map(s=>assignmentCard(s)).join(''):'<div class="empty">No schedule is available for today.</div>'}
+function assignmentCard(s){let p=db.pickers.find(x=>x.id===s.pickerId),l=db.users.find(x=>x.id===s.leaderId),done=db.reports.some(r=>r.scheduleId===s.id);return `<div style="padding:13px 0;border-top:1px solid var(--line)"><div class="between"><div><b>${esc(p?.name||'Picker deleted')}</b> <span class="pill">${esc(s.shift)}</span><div class="muted" style="font-size:12px">Line: ${esc(p?.line||'—')} • Leader: ${esc(l?.name||'—')}</div></div><div class="actions">${done?'<span class="pill green">Completed</span>':current.role==='leader'&&s.shift===current.shift?`<button class="small" onclick="startInspection('${s.id}')">Inspection</button>`:'<span class="pill amber">Pending</span>'}</div></div></div>`}
+function leadersPage(){document.getElementById('view').innerHTML=`<div class="card"><h3>Create New Shift Leader</h3><div class="grid2"><div class="field"><label>Leader Name</label><input id="ln" placeholder="Name"></div><div class="field"><label>Username</label><input id="lu" placeholder="unique username"></div><div class="field"><label>Password</label><input id="lp" type="text" placeholder="password"></div><div class="field"><label>Shift</label><select id="ls"><option>Day</option><option>Night</option></select></div></div><button onclick="addLeader()">Create Leader</button></div><div class="card section"><h3>Leader Accounts</h3>${leadersTable()}</div>`}
+function leadersTable(){let a=db.users.filter(u=>u.role==='leader');return a.length?`<div class="table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Shift</th><th>Action</th></tr></thead><tbody>${a.map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${esc(u.shift)}</td><td><div class="actions"><button class="secondary small" onclick="resetLeaderPassword('${u.id}')">Reset Password</button><button class="danger small" onclick="delUser('${u.id}')">Delete</button></div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No leaders have been created yet.</div>'}
+function addLeader(){let name=val('ln'),username=val('lu'),password=val('lp'),shift=val('ls');if(!name||!username||!password)return alert('Please complete all fields.');if(db.users.some(u=>u.username===username))return alert('This username is already in use.');db.users.push({id:uid(),name,username,password,shift,role:'leader'});save();render()}
+function resetLeaderPassword(id){let u=db.users.find(x=>x.id===id);if(!u)return;let next=prompt('Enter a new password for '+u.name+':');if(next===null)return;if(next.trim().length<4)return alert('Password must be at least 4 characters long.');u.password=next.trim();save();alert('New password has been set. Share it securely with the leader.');render()}
+function delUser(id){if(!confirm('Delete this leader?'))return;db.users=db.users.filter(u=>u.id!==id);save();render()}
+function pickersPage(){document.getElementById('view').innerHTML=`<div class="card"><h3>Add New Picker</h3><div class="grid2"><div class="field"><label>Picker Name</label><input id="pn" placeholder="Picker Name"></div><div class="field"><label>Line Number</label><input id="pl" placeholder="Example: A-01"></div><div class="field"><label>Shift</label><select id="ps"><option>Day</option><option>Night</option></select></div></div><button onclick="addPicker()">Add Picker</button></div><div class="card section"><div class="between"><h3>Picker List</h3><span class="pill">${db.pickers.length} pickers</span></div>${pickerTable()}</div>`}
+function addPicker(){let name=val('pn'),line=val('pl'),shift=val('ps');if(!name||!line)return alert('Enter the name and line number.');db.pickers.push({id:uid(),name,line,shift});save();render()}
+function pickerTable(){return db.pickers.length?`<div class="table-wrap"><table><thead><tr><th>Picker</th><th>Line</th><th>Shift</th><th>Action</th></tr></thead><tbody>${db.pickers.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.line)}</td><td>${esc(p.shift)}</td><td><button class="danger small" onclick="delPicker('${p.id}')">Delete</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No pickers have been added.</div>'}
+function delPicker(id){if(!confirm('Delete this picker?'))return;db.pickers=db.pickers.filter(p=>p.id!==id);save();render()}
+function schedulePage(){let days=Array.from({length:7},(_,i)=>{let d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)+i);return dateISO(d)});document.getElementById('view').innerHTML=`<div class="card"><div class="between"><h3>Weekly Inspection Schedule</h3><span class="pill">7 days</span></div><div class="field"><label>Select Shift</label><select id="scheduleShift" onchange="scheduleShift=this.value;render()"><option ${scheduleShift==='Day'?'selected':''}>Day</option><option ${scheduleShift==='Night'?'selected':''}>Night</option></select></div><div class="notice">Select the picker, line, and responsible shift leader for each day. You can add multiple lines for the same day.</div><div class="field"><label>Date</label><input id="sd" type="date" value="${days[0]}"></div><div class="grid2"><div class="field"><label>Picker</label><select id="sp">${db.pickers.filter(p=>p.shift===scheduleShift).map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(p.line)}</option>`).join('')}</select></div><div class="field"><label>Shift Leader</label><select id="sl">${db.users.filter(u=>u.role==='leader'&&u.shift===scheduleShift).map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}</select></div></div><button onclick="addSchedule()">Add Schedule</button></div><div class="card section"><h3>This Week's Schedule</h3>${scheduleTable(scheduleShift)}</div>`}
+function addSchedule(){let date=val('sd'),pickerId=val('sp'),leaderId=val('sl');if(!date||!pickerId||!leaderId)return alert('Create a picker and a leader first, then complete all selections.');let shift=scheduleShift;if(db.schedule.some(s=>s.date===date&&s.pickerId===pickerId))return alert('A schedule already exists for this picker on this date.');db.schedule.push({id:uid(),date,shift,pickerId,leaderId});save();render()}
+function scheduleTable(sh){let a=db.schedule.filter(s=>s.shift===sh).sort((x,y)=>x.date.localeCompare(y.date));return a.length?`<div class="table-wrap"><table><thead><tr><th>Date</th><th>Picker</th><th>Line</th><th>Leader</th><th>Status</th><th></th></tr></thead><tbody>${a.map(s=>{let p=db.pickers.find(x=>x.id===s.pickerId),l=db.users.find(x=>x.id===s.leaderId),done=db.reports.some(r=>r.scheduleId===s.id);return `<tr><td>${niceDate(s.date)}</td><td>${esc(p?.name)}</td><td>${esc(p?.line)}</td><td>${esc(l?.name)}</td><td><span class="pill ${done?'green':'amber'}">${done?'Done':'Pending'}</span></td><td><button class="danger small" onclick="delSchedule('${s.id}')">Delete</button></td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">No schedule is available for this shift.</div>'}
+function delSchedule(id){if(!confirm('Delete this schedule?'))return;db.schedule=db.schedule.filter(s=>s.id!==id);save();render()}
+function inspectionPage(){let mine=db.schedule.filter(s=>s.date===dateISO()&&s.shift===current.shift&&s.leaderId===current.id);document.getElementById('view').innerHTML=`<div class="card"><h3>Today's Inspection Tasks</h3>${mine.length?mine.map(s=>assignmentCard(s)).join(''):'<div class="empty">No lines are assigned to you today.</div>'}</div>`}
+let activeSchedule=null,items=[],pendingPhoto='';
+function startInspection(id){activeSchedule=id;items=[];pendingPhoto='';let s=db.schedule.find(x=>x.id===id),p=db.pickers.find(x=>x.id===s.pickerId);document.getElementById('view').innerHTML=`<div class="card"><div class="between"><h3>Line Inspection</h3><span class="pill">${esc(s.shift)} Shift</span></div><div class="notice">Picker: <b>${esc(p?.name)}</b> • Line: <b>${esc(p?.line)}</b> • Date: ${niceDate(s.date)}</div><h3 class="section">Add Expiry Product</h3><div class="grid2"><div class="field"><label>Product Name</label><input id="ipn" placeholder="Product Name"></div><div class="field"><label>Expiry Date</label><input id="ipe" type="date"></div><div class="field"><label>Quantity (PCS)</label><input id="ipq" type="number" min="1" placeholder="0"></div><div class="field"><label>Note</label><input id="ipnote" placeholder="Example: Expired product found"></div><div class="field"><label>Product Photo (Optional)</label><div class="row"><label class="secondary small" style="display:inline-flex;align-items:center;gap:6px;padding:9px 12px;border-radius:8px;cursor:pointer">📷 Camera<input id="ipcamera" type="file" accept="image/*" capture="environment" onchange="preparePhoto(this)" style="display:none"></label><label class="secondary small" style="display:inline-flex;align-items:center;gap:6px;padding:9px 12px;border-radius:8px;cursor:pointer">🖼️ Gallery<input id="ipphoto" type="file" accept="image/*" onchange="preparePhoto(this)" style="display:none"></label></div><div id="photoPreview" class="muted">Take a photo with the camera or choose one from the gallery.</div></div></div><button class="secondary" onclick="addItem()">+ Add Product</button><div id="itemList" class="section"></div><div class="field"><label>Overall Note</label><textarea id="overallNote" placeholder="Additional comments about the line..."></textarea></div><div class="row"><button onclick="submitReport()">Submit Report</button><button class="secondary" onclick="go('dashboard')">Cancel</button></div></div>`;drawItems()}
+let cropImage=null,cropZoom=1,cropX=50,cropY=50;
+function preparePhoto(input){let file=input.files?.[0];if(!file){return}if(!file.type.startsWith('image/'))return alert('Please select an image file only.');if(file.size>8*1024*1024)return alert('Image size must be less than 8 MB.');let reader=new FileReader();reader.onload=()=>{let img=new Image();img.onload=()=>{cropImage=img;cropZoom=1;cropX=50;cropY=50;showCropEditor()};img.src=reader.result};reader.readAsDataURL(file)}
+function showCropEditor(){let el=document.getElementById('photoPreview');if(!el||!cropImage)return;el.innerHTML=`<div style="margin-top:10px"><canvas id="cropCanvas" width="240" height="180" style="width:240px;max-width:100%;height:180px;object-fit:contain;background:#111;border-radius:8px"></canvas><div class="field"><label>Zoom</label><input type="range" min="1" max="3" step=".05" value="${cropZoom}" oninput="cropZoom=Number(this.value);drawCrop()"></div><div class="grid2"><div class="field"><label>Horizontal</label><input type="range" min="0" max="100" value="${cropX}" oninput="cropX=Number(this.value);drawCrop()"></div><div class="field"><label>Vertical</label><input type="range" min="0" max="100" value="${cropY}" oninput="cropY=Number(this.value);drawCrop()"></div></div><div class="row"><button class="small" onclick="applyCrop()">Crop & Use Photo</button><button class="secondary small" onclick="cancelCrop()">Cancel</button></div></div>`;drawCrop()}
+function drawCrop(){let c=document.getElementById('cropCanvas');if(!c||!cropImage)return;let ctx=c.getContext('2d'),w=c.width,h=c.height,base=Math.max(w/cropImage.width,h/cropImage.height),scale=base*cropZoom,dw=cropImage.width*scale,dh=cropImage.height*scale,left=(w-dw)*cropX/100,top=(h-dh)*cropY/100;ctx.clearRect(0,0,w,h);ctx.fillStyle='#111';ctx.fillRect(0,0,w,h);ctx.drawImage(cropImage,left,top,dw,dh)}
+function applyCrop(){let c=document.getElementById('cropCanvas');if(!c)return;let out=document.createElement('canvas');out.width=900;out.height=675;out.getContext('2d').drawImage(c,0,0,out.width,out.height);pendingPhoto=out.toDataURL('image/jpeg',.76);document.getElementById('photoPreview').innerHTML=`<img alt="Cropped product photo" style="max-width:160px;max-height:120px;border-radius:8px;display:block;margin:8px 0" src="${pendingPhoto}"><span class="muted">Image cropped.</span> <button class="secondary small" onclick="showCropEditor()">Crop Again</button> <button class="danger small" onclick="removePhoto()">Remove Photo</button>`}
+function cancelCrop(){if(pendingPhoto){document.getElementById('photoPreview').innerHTML=`<img alt="Product photo" style="max-width:160px;max-height:120px;border-radius:8px" src="${pendingPhoto}">`}else{cropImage=null;document.getElementById('photoPreview').textContent='No image selected.'}} 
+function removePhoto(){pendingPhoto='';cropImage=null;document.getElementById('ipphoto').value='';document.getElementById('ipcamera').value='';document.getElementById('photoPreview').textContent='Take a photo with the camera or choose one from the gallery.'}
+function addItem(){let name=val('ipn'),expiry=val('ipe'),qty=Number(val('ipq')),note=val('ipnote');if(!name||!expiry||!qty||qty<1)return alert('Enter the product, expiry date, and quantity.');items.push({name,expiry,qty,note,photo:pendingPhoto});pendingPhoto='';['ipn','ipe','ipq','ipnote','ipphoto','ipcamera'].forEach(id=>document.getElementById(id).value='');document.getElementById('photoPreview').textContent='Take a photo with the camera or choose one from the gallery.';cropImage=null;drawItems()}
+function drawItems(){let el=document.getElementById('itemList');if(!el)return;el.innerHTML=items.length?`<h4>Added Products (${items.length})</h4>`+items.map((x,i)=>`<div class="between" style="padding:10px 0;border-top:1px solid var(--line)"><div class="row">${x.photo?`<img class="report-photo" alt="Product" src="${x.photo}" style="width:62px;height:62px;object-fit:cover;border-radius:8px">`:''}<div><b>${esc(x.name)}</b><div class="muted" style="font-size:12px">Expiry: ${niceDate(x.expiry)} • ${x.qty} PCS • ${esc(x.note)}</div></div></div><button class="danger small" onclick="items.splice(${i},1);drawItems()">Remove</button></div>`).join(''):'<div class="empty">No products have been added yet.</div>'}
+function submitReport(){let s=db.schedule.find(x=>x.id===activeSchedule);if(!s)return;if(db.reports.some(r=>r.scheduleId===s.id))return alert('A report has already been submitted for this inspection.');db.reports.push({id:uid(),scheduleId:s.id,date:s.date,shift:s.shift,pickerId:s.pickerId,leaderId:current.id,items:structuredClone(items),note:val('overallNote'),created:new Date().toISOString()});save();alert('Report submitted successfully.');go('dashboard')}
+function reportsPage(){let a=db.reports.filter(r=>current.role==='manager'||r.leaderId===current.id).sort((x,y)=>y.created.localeCompare(x.created));document.getElementById('view').innerHTML=`<div class="card"><div class="between"><div><h3>Inspection Reports</h3><div class="muted">${a.length} reports</div></div><div class="actions"><button class="small" onclick="downloadCSV()">Download Excel (CSV)</button><button class="secondary small" onclick="window.print()">Download PDF / Print</button><button class="danger small" onclick="clearReports()">Clear Reports</button></div></div><div class="section">${reportTable(a)}</div></div>`}
+function clearReports(){let mine=current.role!=='manager';let count=mine?db.reports.filter(r=>r.leaderId===current.id).length:db.reports.length;if(!count)return alert('There are no reports to clear.');let message=mine?'All reports submitted by you will be permanently deleted. Are you sure?':'All reports from every shift will be permanently deleted. Are you sure?';if(!confirm(message))return;db.reports=mine?db.reports.filter(r=>r.leaderId!==current.id):[];save();alert('Reports cleared successfully.');render()}
+function reportTable(a){return a.length?`<div class="table-wrap"><table><thead><tr><th>Date</th><th>Shift</th><th>Picker</th><th>Line</th><th>Leader</th><th>Product / Photo</th><th>Qty</th><th>Note</th></tr></thead><tbody>${a.map(r=>{let p=db.pickers.find(x=>x.id===r.pickerId),l=db.users.find(x=>x.id===r.leaderId);return `<tr><td>${niceDate(r.date)}</td><td>${esc(r.shift)}</td><td>${esc(p?.name||'—')}</td><td>${esc(p?.line||'—')}</td><td>${esc(l?.name||'—')}</td><td>${r.items.length? r.items.map(i=>`${i.photo?`<img class="report-photo" src="${i.photo}" alt="Product photo" style="display:block;width:58px;height:58px;object-fit:cover;border-radius:7px;margin:3px 0">`:''}${esc(i.name)} (${niceDate(i.expiry)})`).join('<br>'):'No expiry found'}</td><td>${r.items.reduce((n,i)=>n+i.qty,0)}</td><td>${esc(r.note)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">No reports have been submitted yet.</div>'}
+function downloadCSV(){let a=db.reports.filter(r=>current.role==='manager'||r.leaderId===current.id);let rows=[['Date','Shift','Picker','Line','Leader','Product','Expiry Date','Quantity PCS','Product Note','Overall Note']];a.forEach(r=>{let p=db.pickers.find(x=>x.id===r.pickerId),l=db.users.find(x=>x.id===r.leaderId);if(!r.items.length)rows.push([r.date,r.shift,p?.name,p?.line,l?.name,'No expiry found','','','',r.note]);r.items.forEach(i=>rows.push([r.date,r.shift,p?.name,p?.line,l?.name,i.name,i.expiry,i.qty,i.note,r.note]))});let csv='\ufeff'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a1=document.createElement('a');a1.href=url;a1.download='TeamGuard-Reports.csv';a1.click();URL.revokeObjectURL(url)}
+function val(id){return document.getElementById(id)?.value?.trim()||''}
+</script>
+</body>
+</html>
