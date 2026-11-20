@@ -656,12 +656,12 @@ function selectInspectionProduct(index){
  const expiry=document.getElementById('ipe');if(expiry)expiry.focus();
 }
 async function lookupInspectionProduct(auto=false){
- const raw=String(val('ipbarcode')||'').trim(),code=raw.replace(/\\s+/g,''),status=document.getElementById('barcodeLookupStatus'),panel=document.getElementById('inspectionProductMatches');
+ const raw=String(val('ipbarcode')||'').trim(),code=raw.replace(/\s+/g,''),status=document.getElementById('barcodeLookupStatus'),panel=document.getElementById('inspectionProductMatches');
  if(panel)panel.innerHTML='';
  window.inspectionSearchMatches=[];window.inspectionSelectedProduct=false;
  if(!code){if(status)status.textContent='Scan or enter the product barcode.';return}
  const products=db.products||[];
- const barcodeOf=p=>String(p.barcode??p.Barcode??p.ean??p.upc??'').trim().replace(/\\s+/g,'');
+ const barcodeOf=p=>String(p.barcode??p.Barcode??p.ean??p.upc??'').trim().replace(/\s+/g,'');
  let matches=products.filter(p=>barcodeOf(p)===code);
  if(!matches.length&&code.length>=5)matches=products.filter(p=>barcodeOf(p).endsWith(code));
  if(!matches.length){if(status)status.textContent=auto?'No matching product found. Try the full barcode or last 5–6 digits.':'Barcode not found in the uploaded product list.';return}
