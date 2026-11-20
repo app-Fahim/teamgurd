@@ -344,27 +344,47 @@ async function addLeader(){
  const name=val('ln').trim(),email=val('le').trim().toLowerCase(),username=val('lu').trim().toLowerCase(),password=val('lp'),shift=val('ls');
  if(!name||!email||!username||!password)return alert('Please complete all fields.');
  if(password.length<6)return alert('Password must be at least 6 characters.');
- if(db.users.some(u=>u.username===username&&u.workspaceId===current.workspaceId))return alert('This username is already in use on this device.');
- const btn=document.getElementById('createLeaderBtn');if(btn){btn.disabled=true;btn.textContent='Creating…'}
+ const btn=document.getElementById('createLeaderBtn');
+ if(btn){btn.disabled=true;btn.textContent='Checking…'}
  try{
-  let invokeError=null;
-  const result=await sb.functions.invoke('manage-leader',{body:{action:'create',name,email,username,password,shift}});
-  invokeError=result.error||null;
-  if(!invokeError&&!result.data?.success)invokeError=new Error(result.data?.error||'Create request did not confirm success.');
-  let leader=result.data?.leader||null;
-  if(invokeError){
-   console.warn('Leader create response was not confirmed; checking Supabase membership before reporting failure:',invokeError);
-   const {data:existing,error:lookupError}=await sb.from('teamguard_members').select('workspace_id,user_id,username,role,full_name,shift').eq('workspace_id',current.workspaceId).eq('username',username).eq('role','leader').maybeSingle();
-   if(lookupError)throw new Error('Leader creation response failed and membership check failed: '+lookupError.message);
-   if(!existing)throw new Error(invokeError.message||'Could not create Leader account. Please check Edge Function logs.');
-   leader={id:existing.user_id,name:existing.full_name||name,username:existing.username,email,shift:existing.shift||shift};
+  // Check Supabase first so retries never create duplicate Auth users or memberships.
+  const {data:before,error:beforeError}=await sb.from('teamguard_members')
+   .select('workspace_id,user_id,username,role,full_name,shift')
+   .eq('workspace_id',current.workspaceId).eq('username',username).eq('role','leader').maybeSingle();
+  if(beforeError)throw new Error('Could not check existing Leaders in Supabase: '+beforeError.message);
+  if(before){
+   if(!db.users.some(u=>u.id===before.user_id)){
+    db.users.push({id:before.user_id,authId:before.user_id,workspaceId:before.workspace_id,name:before.full_name||name,username:before.username,email,shift:before.shift||shift,role:'leader'});
+   }
+   alert('This Leader already exists in your workspace. The existing account has been loaded; no duplicate was created.');
+   render();
+   return;
   }
-  if(!leader?.id)throw new Error('Leader exists but the function did not return its account ID. Refresh the page to load the account.');
-  if(!db.users.some(u=>u.id===leader.id)){
-   db.users.push({id:leader.id,authId:leader.id,workspaceId:current.workspaceId,name:leader.name||name,username:leader.username||username,email:leader.email||email,shift:leader.shift||shift,role:'leader'});
+  if(db.users.some(u=>u.username===username&&u.workspaceId===current.workspaceId))return alert('This username is already in use on this device. Refresh the page and try again.');
+  if(btn)btn.textContent='Creating…';
+  const result=await sb.functions.invoke('manage-leader',{body:{action:'create',name,email,username,password,shift}});
+  // Verify the database record independently of the Edge Function response.
+  // A function/network response can fail after the database transaction has completed.
+  const {data:created,error:verifyError}=await sb.from('teamguard_members')
+   .select('workspace_id,user_id,username,role,full_name,shift')
+   .eq('workspace_id',current.workspaceId).eq('username',username).eq('role','leader').maybeSingle();
+  if(verifyError)throw new Error('The create request was sent, but Supabase could not verify the Leader: '+verifyError.message);
+  if(!created){
+   let detail=result.error?.message||result.data?.details||result.data?.error||'No Leader membership was created.';
+   try{
+    const ctx=result.error?.context;
+    if(ctx?.clone){const body=await ctx.clone().json();detail=body.details||body.error||body.message||detail}
+    else if(ctx?.json){const body=await ctx.json();detail=body.details||body.error||body.message||detail}
+   }catch(_){}
+   throw new Error('Could not create Leader account: '+detail);
+  }
+  if(!db.users.some(u=>u.id===created.user_id)){
+   db.users.push({id:created.user_id,authId:created.user_id,workspaceId:created.workspace_id,name:created.full_name||name,username:created.username,email,shift:created.shift||shift,role:'leader'});
   }
   try{save()}catch(cacheError){console.warn('Leader exists in Supabase; local cache save failed:',cacheError)}
-  alert('Leader account is available in Supabase. The Leader can sign in using the email and password set for this account.');
+  alert(result.error||!result.data?.success
+   ? 'Leader account was found in Supabase and loaded successfully. The account may already have been created by the request.'
+   : 'Leader account created successfully in Supabase. The Leader can sign in using the email and password set for this account.');
   render();
  }catch(e){console.error('Create Leader failed:',e);alert(e.message||'Could not create Leader. Please try again.')}
  finally{const b=document.getElementById('createLeaderBtn');if(b){b.disabled=false;b.textContent='Create Leader'}}
