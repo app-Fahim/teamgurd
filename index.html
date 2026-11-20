@@ -454,7 +454,22 @@ function todayAssignments(){let a=db.schedule.filter(s=>s.date===dateISO()&&!ins
 function assignmentCard(s){let p=db.pickers.find(x=>x.id===s.pickerId),l=db.users.find(x=>x.id===s.leaderId),done=inspectionComplete(s.id);return `<div style="padding:13px 0;border-top:1px solid var(--line)"><div class="between"><div><b>${esc(p?.name||'Picker deleted')}</b> <span class="pill">${esc(s.shift)}</span><div class="muted" style="font-size:12px">Line: ${esc(p?.line||'—')} • Leader: ${esc(l?.name||'—')}</div></div><div class="actions">${done?'<span class="pill green">Complete</span>':current.role==='leader'&&s.shift===current.shift?`<button class="small" onclick="startInspection('${s.id}')">Inspection</button>`:'<span class="pill amber">Pending</span>'}</div></div></div>`}
 function productUploadPage(){
  if(current?.role!=='manager'){go('dashboard');return}
- document.getElementById('view').innerHTML=`<div class="card"><h3>Upload Product File</h3><p class="muted">Upload an Excel (.xlsx) or CSV (.csv) file containing Product Name, Barcode and SKU. The product data is saved securely to this workspace for Leaders to use during inspection.</p><div class="field"><label>Select Excel or CSV file</label><input id="productFile" type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div><div class="notice">The uploaded product list will not be displayed here. A new upload replaces the previous product catalogue in this workspace. Duplicate barcodes inside the new file are allowed.</div><button id="uploadProductsBtn" onclick="uploadProductFile()">Upload File</button><div id="productUploadStatus" class="muted section"></div></div>`
+ document.getElementById('view').innerHTML=`<div class="card"><h3>Upload Product File</h3><p class="muted">Upload an Excel (.xlsx) or CSV (.csv) file containing Product Name, Barcode and SKU. The product data is saved securely to this workspace for Leaders to use during inspection.</p><div class="section"><button class="secondary" type="button" onclick="downloadProductDemo()">⬇ Download Demo Excel File</button><p class="muted">Download the sample file, copy/paste your products under the same column headings, remove the example rows, then upload the completed file below.</p></div><div class="field"><label>Select Excel or CSV file</label><input id="productFile" type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div><div class="notice"><b>Required columns:</b> Product Name, Barcode, SKU. Keep the header names unchanged. Barcode should be stored as text to preserve leading zeros. The uploaded product list will not be displayed here. A new upload replaces the previous product catalogue in this workspace. Duplicate barcodes inside the new file are allowed.</div><button id="uploadProductsBtn" onclick="uploadProductFile()">Upload File</button><div id="productUploadStatus" class="muted section"></div></div>`
+}
+function downloadProductDemo(){
+ if(typeof XLSX==='undefined')return alert('Excel tools are still loading. Please try again in a moment.');
+ const rows=[
+  ['Product Name','Barcode','SKU'],
+  ['Demo Product 1','0001234567890','SKU-001'],
+  ['Demo Product 2','0009876543210','SKU-002'],
+  ['Demo Product 3','1234500006789','SKU-003']
+ ];
+ const ws=XLSX.utils.aoa_to_sheet(rows);
+ ['A','B','C'].forEach(col=>{for(let r=2;r<=4;r++){const cell=ws[col+r];if(cell){cell.t='s';cell.v=String(cell.v)}}});
+ ws['!cols']=[{wch:32},{wch:22},{wch:20}];
+ ws['!autofilter']={ref:'A1:C4'};
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Products');
+ XLSX.writeFile(wb,'TeamGuard_Product_Demo_Template.xlsx');
 }
 function normalizeHeader(v){return String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 async function uploadProductFile(){
