@@ -652,11 +652,11 @@ function startInspection(id){
   <input id="ipn" type="hidden"><input id="ipsku" type="hidden">
  </div>
  <div id="manualEntryPanel" style="display:none">
-  <div class="notice">Enter all product details manually.</div>
+  <div class="notice">Enter Product Name and Barcode. SKU is optional.</div>
   <div class="grid2">
    <div class="field"><label>Product Name</label><input id="ipnManual" placeholder="Enter product name"></div>
    <div class="field"><label>Barcode</label><input id="ipbarcodeManual" inputmode="numeric" placeholder="Enter barcode"></div>
-   <div class="field"><label>SKU</label><input id="ipskuManual" placeholder="Enter SKU"></div>
+   <div class="field"><label>SKU (Optional)</label><input id="ipskuManual" placeholder="Enter SKU if available"></div>
   </div>
  </div>
  <div class="grid2 section">
@@ -772,7 +772,7 @@ async function addItem(){
   const sku=String(val(mode==='manual'?'ipskuManual':'ipsku')||'').trim();
   const expiry=val('ipe'),qty=Number(val('ipq')),unit=val('ipunit')||'PCS',note=val('ipnote');
   if(!barcode||!name)return alert(mode==='manual'?'Enter Product Name and Barcode.':'Search and select a product by barcode first.');
-  if(mode==='manual'&&!sku)return alert('Enter the product SKU.');
+  // SKU is optional for manual inspection entries; an empty value is saved as blank.
   if(mode==='barcode'&&!window.inspectionSelectedProduct)return alert('Please select the matching barcode product first.');
   if(!expiry)return alert('Select the Product Expiry Date.');
   if(!qty||qty<=0)return alert('Enter a Quantity greater than zero.');
