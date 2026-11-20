@@ -162,6 +162,16 @@ function dateISO(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1)
 function niceDate(s){if(!s)return '—';return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
 function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function shiftUsers(){return db.users.filter(u=>u.role==='leader'&&(current.role==='manager'||u.shift===current.shift))}
+function openApp(u){
+ current=u;
+ document.getElementById('login').classList.add('hidden');
+ document.getElementById('app').classList.remove('hidden');
+ document.getElementById('logoutBtn').classList.remove('hidden');
+ document.getElementById('welcome').textContent='Welcome, '+u.name;
+ document.getElementById('roleInfo').textContent=u.role==='manager'?'Manager • Day & Night Shift':'Shift Leader • '+u.shift+' Shift';
+ document.getElementById('today').textContent=niceDate(dateISO());
+ render();
+}
 async function loadTeamGuardProfile(authUser){
  const error=document.getElementById('loginError');
  try{
