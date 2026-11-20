@@ -244,6 +244,13 @@ async function pullCloudUpdates(){
    changed=true;
   }
 
+  // Remove completed schedules after their scheduled date; reports remain stored separately.
+  if(current===who&&who.role==='manager'&&pruneExpiredCompletedSchedules()){
+   localStorage.setItem(KEY,JSON.stringify(db));
+   await saveCloudOrThrow();
+   changed=true;
+  }
+
   // Keep the workspace roster current for names and Leader changes.
   const {data:members,error:membersError}=await sb.from('teamguard_members')
    .select('workspace_id,user_id,username,role,full_name,shift')
@@ -442,6 +449,7 @@ function reportBars(title,stats){let max=Math.max(1,...stats.map(x=>x.count));re
 function leaderHome(){let mine=db.schedule.filter(s=>s.date===dateISO()&&s.shift===current.shift),done=db.reports.filter(r=>r.leaderId===current.id&&r.date===dateISO());document.getElementById('view').innerHTML=`<div class="stats">${stat('Assigned Lines Today',mine.length)}${stat('Reports Today',done.length)}${stat("My Team's Pickers",db.pickers.filter(p=>p.shift===current.shift).length)}${stat('Total Submitted Reports',db.reports.filter(r=>r.leaderId===current.id).length)}</div><div class="card section"><h3>Today&#39;s Tasks</h3>${mine.length?mine.map(s=>assignmentCard(s)).join(''):'<div class="empty">No lines have been assigned for today.</div>'}</div>`}
 function inspectionDismissed(id){return (db.dismissedInspections||[]).some(x=>String(x)===String(id))}
 function inspectionComplete(id){return inspectionDismissed(id)||db.reports.some(r=>String(r.scheduleId)===String(id))}
+function pruneExpiredCompletedSchedules(){if(current?.role!=='manager')return false;const today=dateISO(),before=db.schedule.length;db.schedule=db.schedule.filter(s=>!(String(s.date||'')<today&&inspectionComplete(s.id)));return db.schedule.length!==before}
 function todayAssignments(){let a=db.schedule.filter(s=>s.date===dateISO()&&!inspectionComplete(s.id));return a.length?a.map(s=>assignmentCard(s)).join(''):'<div class="empty">No pending inspections for today.</div>'}
 function assignmentCard(s){let p=db.pickers.find(x=>x.id===s.pickerId),l=db.users.find(x=>x.id===s.leaderId),done=inspectionComplete(s.id);return `<div style="padding:13px 0;border-top:1px solid var(--line)"><div class="between"><div><b>${esc(p?.name||'Picker deleted')}</b> <span class="pill">${esc(s.shift)}</span><div class="muted" style="font-size:12px">Line: ${esc(p?.line||'—')} • Leader: ${esc(l?.name||'—')}</div></div><div class="actions">${done?'<span class="pill green">Complete</span>':current.role==='leader'&&s.shift===current.shift?`<button class="small" onclick="startInspection('${s.id}')">Inspection</button>`:'<span class="pill amber">Pending</span>'}</div></div></div>`}
 function productUploadPage(){
