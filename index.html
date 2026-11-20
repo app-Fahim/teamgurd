@@ -250,7 +250,33 @@ async function logout(){
  document.getElementById('loginError').textContent='';
 }
 document.getElementById('logoutBtn').onclick=logout;
-(async()=>{try{const {data:{session}}=await sb.auth.getSession();if(session?.user)await loadTeamGuardProfile(session.user)}catch(e){console.error('Session restore failed:',e)}})();
+async function restoreSavedSession(){
+ const loginPanel=document.getElementById('login'),appPanel=document.getElementById('app'),error=document.getElementById('loginError');
+ loginPanel.classList.add('hidden');
+ appPanel.classList.add('hidden');
+ error.textContent='';
+ const status=document.createElement('div');
+ status.id='sessionRestoreStatus';
+ status.className='login-wrap card';
+ status.textContent='Restoring your saved session…';
+ loginPanel.insertAdjacentElement('beforebegin',status);
+ try{
+  const {data,error:sessionError}=await sb.auth.getSession();
+  if(sessionError)throw sessionError;
+  if(data?.session?.user){
+   await loadTeamGuardProfile(data.session.user);
+  }else{
+   loginPanel.classList.remove('hidden');
+  }
+ }catch(e){
+  console.error('Session restore failed:',e);
+  loginPanel.classList.remove('hidden');
+  error.textContent='Could not restore your saved session. Please sign in again. '+(e.message||'');
+ }finally{
+  status.remove();
+ }
+}
+restoreSavedSession();
 document.getElementById('themeBtn').onclick=()=>{let t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('tg_theme',t)};document.documentElement.dataset.theme=localStorage.getItem('tg_theme')||'light';
 function navItems(){return current.role==='manager'?[['dashboard','▦','Overview'],['leaders','♙','Leaders'],['performance','▥','Employee Performance'],['activity','◷','Activity History'],['notifications','♢','Notifications'+((db.notifications||[]).filter(n=>!n.read).length?' ('+(db.notifications||[]).filter(n=>!n.read).length+')':'')],['pickers','☷','Pickers & Lines'],['schedule','▦','Weekly Schedule'],['reports','▤','All Reports'],['account','⚙','My Account'],['backup','⬇','Backup & Restore']]:[['dashboard','▦','My Dashboard'],['inspection','✓','Today Inspection'],['reports','▤','My Reports']]}
 function render(){document.getElementById('navs').innerHTML=navItems().map(([id,ic,n])=>`<button class="nav ${page===id?'active':''}" onclick="go('${id}')">${ic} ${n}</button>`).join('');let f={dashboard:current.role==='manager'?managerHome:leaderHome,leaders:leadersPage,pickers:pickersPage,schedule:schedulePage,reports:reportsPage,inspection:inspectionPage,account:accountPage,backup:backupPage,performance:performancePage,activity:activityPage,notifications:notificationsPage};(f[page]||f.dashboard)()}
