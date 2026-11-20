@@ -441,7 +441,7 @@ function todayAssignments(){let a=db.schedule.filter(s=>s.date===dateISO());retu
 function assignmentCard(s){let p=db.pickers.find(x=>x.id===s.pickerId),l=db.users.find(x=>x.id===s.leaderId),done=db.reports.some(r=>r.scheduleId===s.id);return `<div style="padding:13px 0;border-top:1px solid var(--line)"><div class="between"><div><b>${esc(p?.name||'Picker deleted')}</b> <span class="pill">${esc(s.shift)}</span><div class="muted" style="font-size:12px">Line: ${esc(p?.line||'—')} • Leader: ${esc(l?.name||'—')}</div></div><div class="actions">${done?'<span class="pill green">Completed</span>':current.role==='leader'&&s.shift===current.shift?`<button class="small" onclick="startInspection('${s.id}')">Inspection</button>`:'<span class="pill amber">Pending</span>'}</div></div></div>`}
 function productUploadPage(){
  if(current?.role!=='manager'){go('dashboard');return}
- document.getElementById('view').innerHTML=`<div class="card"><h3>Upload Product File</h3><p class="muted">Upload an Excel (.xlsx) or CSV (.csv) file containing Product Name, Barcode and SKU. The product data is saved securely to this workspace for Leaders to use during inspection.</p><div class="field"><label>Select Excel or CSV file</label><input id="productFile" type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div><div class="notice">The uploaded product list will not be displayed here. Existing products are kept; uploaded rows are added to the workspace catalogue. Duplicate barcodes are allowed.</div><button id="uploadProductsBtn" onclick="uploadProductFile()">Upload File</button><div id="productUploadStatus" class="muted section"></div></div>`
+ document.getElementById('view').innerHTML=`<div class="card"><h3>Upload Product File</h3><p class="muted">Upload an Excel (.xlsx) or CSV (.csv) file containing Product Name, Barcode and SKU. The product data is saved securely to this workspace for Leaders to use during inspection.</p><div class="field"><label>Select Excel or CSV file</label><input id="productFile" type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div><div class="notice">The uploaded product list will not be displayed here. A new upload replaces the previous product catalogue in this workspace. Duplicate barcodes inside the new file are allowed.</div><button id="uploadProductsBtn" onclick="uploadProductFile()">Upload File</button><div id="productUploadStatus" class="muted section"></div></div>`
 }
 function normalizeHeader(v){return String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 async function uploadProductFile(){
@@ -463,12 +463,12 @@ async function uploadProductFile(){
   if(!mapped.name||!mapped.barcode||!mapped.sku)throw new Error('Required columns not found. Please include Product Name, Barcode and SKU headers.');
   const imported=rows.map(row=>({name:String(row[mapped.name]??'').trim(),barcode:String(row[mapped.barcode]??'').trim(),sku:String(row[mapped.sku]??'').trim()})).filter(x=>x.name&&x.barcode);
   if(!imported.length)throw new Error('No valid rows found. Each product must have a Product Name and Barcode.');
-  db.products=(db.products||[]).concat(imported);
+  db.products=imported;
   localStorage.setItem(KEY,JSON.stringify(db));
   await saveCloudOrThrow();
   logActivity('Product File Uploaded',file.name+' • '+imported.length+' product rows');
   localStorage.setItem(KEY,JSON.stringify(db));
-  status.textContent='Upload successful. '+imported.length+' product rows saved to Cloud. Duplicate barcodes were kept.';
+  status.textContent='Upload successful. '+imported.length+' product rows saved to Cloud. The previous product file was replaced.';
   alert('Product file uploaded successfully. '+imported.length+' rows saved to Cloud.');
  }catch(e){console.error('Product file upload failed:',e);status.textContent='Upload failed: '+(e.message||'Please try again.');alert('Product file upload failed: '+(e.message||'Please try again.'))}
  finally{if(btn)btn.disabled=false}
