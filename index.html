@@ -214,7 +214,6 @@ async function logout(){
  document.getElementById('password').value='';
  document.getElementById('loginError').textContent='';
 }
-document.getElementById('loginBtn').addEventListener('click',e=>{if(document.getElementById('loginForm').reportValidity()){e.preventDefault();login()}});
 document.getElementById('logoutBtn').onclick=logout;
 (async()=>{try{const {data:{session}}=await sb.auth.getSession();if(session?.user)await loadTeamGuardProfile(session.user)}catch(e){console.error('Session restore failed:',e)}})();
 document.getElementById('themeBtn').onclick=()=>{let t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('tg_theme',t)};document.documentElement.dataset.theme=localStorage.getItem('tg_theme')||'light';
