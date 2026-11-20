@@ -447,7 +447,7 @@ function normalizeHeader(v){return String(v||'').toLowerCase().replace(/[^a-z0-9
 async function uploadProductFile(){
  const input=document.getElementById('productFile'),file=input?.files?.[0],status=document.getElementById('productUploadStatus'),btn=document.getElementById('uploadProductsBtn');
  if(!file)return alert('Please choose an Excel or CSV file.');
- if(!/\\.(xlsx|csv)$/i.test(file.name))return alert('Only .xlsx and .csv files are supported.');
+ if(!/\.(xlsx|csv)$/i.test(file.name))return alert('Only .xlsx and .csv files are supported.');
  try{
   btn.disabled=true;status.textContent='Reading file...';
   const data=await file.arrayBuffer();
