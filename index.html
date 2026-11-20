@@ -157,7 +157,7 @@ db.activity=db.activity||[];db.notifications=db.notifications||[];db.products=Ar
 function load(){let data;try{data=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){data=null}if(!data||typeof data!=='object'||Array.isArray(data))data=structuredClone(initial);if(!Array.isArray(data.users))data.users=[];if(!Array.isArray(data.pickers))data.pickers=[];if(!Array.isArray(data.schedule))data.schedule=[];if(!Array.isArray(data.reports))data.reports=[];if(!Array.isArray(data.activity))data.activity=[];if(!Array.isArray(data.notifications))data.notifications=[];if(!Array.isArray(data.products))data.products=[];return data}
 let cloudSaveChain=Promise.resolve();
 let cloudSyncState='offline';
-let cloudPollTimer=null,cloudPullBusy=false,lastCloudUpdatedAt=null,lastReportsSignature='',lastMembersSignature='';
+let cloudPollTimer=null,cloudPullBusy=false,lastCloudUpdatedAt=null,lastReportsSignature='',lastMembersSignature='',lastUiDate=dateISO();
 function cloudSharedPayload(){return {pickers:db.pickers||[],schedule:db.schedule||[],dismissedInspections:db.dismissedInspections||[],activity:(db.activity||[]).slice(0,500),notifications:(db.notifications||[]).slice(0,200),products:db.products||[]}}
 function save(){
  localStorage.setItem(KEY,JSON.stringify(db));
@@ -285,7 +285,18 @@ function startCloudAutoSync(){
  if(cloudPollTimer)clearInterval(cloudPollTimer);
  lastReportsSignature=JSON.stringify(db.reports||[]);
  lastMembersSignature=JSON.stringify(db.users||[]);
- cloudPollTimer=setInterval(pullCloudUpdates,5000);
+ lastUiDate=dateISO();
+ cloudPollTimer=setInterval(()=>{
+  const today=dateISO();
+  if(today!==lastUiDate){
+   lastUiDate=today;
+   const dateLabel=document.getElementById('today');
+   if(dateLabel)dateLabel.textContent=niceDate(today);
+   // Refresh daily counters/lists at date rollover without interrupting an inspection in progress.
+   if(!activeSchedule&&(page==='dashboard'||page==='inspection'))render();
+  }
+  pullCloudUpdates();
+ },5000);
 }
 function stopCloudAutoSync(){
  if(cloudPollTimer)clearInterval(cloudPollTimer);
@@ -446,7 +457,7 @@ function reportDate(r){if(r.created){let d=new Date(r.created);if(!isNaN(d.getTi
 function weeklyReportStats(){let now=new Date(),monday=new Date(now);monday.setDate(now.getDate()-((now.getDay()+6)%7));return Array.from({length:7},(_,i)=>{let d=new Date(monday);d.setDate(monday.getDate()+i);let key=dateISO(d);return {label:d.toLocaleDateString('en',{weekday:'short'}),count:db.reports.filter(r=>reportDate(r)===key).length}})}
 function monthlyReportStats(){let now=new Date(),year=now.getFullYear(),month=now.getMonth(),days=new Date(year,month+1,0).getDate(),weeks=[];for(let start=1,n=1;start<=days;start+=7,n++){let end=Math.min(start+6,days);weeks.push({label:'W'+n,count:db.reports.filter(r=>{let d=reportDate(r);if(!d)return false;let x=new Date(d+'T00:00:00');return x.getFullYear()===year&&x.getMonth()===month&&x.getDate()>=start&&x.getDate()<=end}).length})}return weeks}
 function reportBars(title,stats){let max=Math.max(1,...stats.map(x=>x.count));return '<div style="padding:14px;border:1px solid var(--line);border-radius:13px"><b>'+title+'</b><div style="display:flex;align-items:end;gap:8px;height:145px;margin-top:14px">'+stats.map(x=>'<div title="'+x.label+': '+x.count+' reports" style="flex:1;min-width:0;text-align:center;height:100%;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:5px"><small>'+x.count+'</small><div style="width:100%;max-width:34px;height:'+Math.max(4,x.count/max*100)+'%;background:linear-gradient(180deg,var(--primary),#06b6d4);border-radius:6px 6px 2px 2px"></div><small class="muted">'+x.label+'</small></div>').join('')+'</div></div>'}
-function leaderHome(){let mine=db.schedule.filter(s=>s.date===dateISO()&&s.shift===current.shift),done=db.reports.filter(r=>r.leaderId===current.id&&r.date===dateISO());document.getElementById('view').innerHTML=`<div class="stats">${stat('Assigned Lines Today',mine.length)}${stat('Reports Today',done.length)}${stat("My Team's Pickers",db.pickers.filter(p=>p.shift===current.shift).length)}${stat('Total Submitted Reports',db.reports.filter(r=>r.leaderId===current.id).length)}</div><div class="card section"><h3>Today&#39;s Tasks</h3>${mine.length?mine.map(s=>assignmentCard(s)).join(''):'<div class="empty">No lines have been assigned for today.</div>'}</div>`}
+function leaderHome(){let today=dateISO(),mine=db.schedule.filter(s=>s.date===today&&s.shift===current.shift&&s.leaderId===current.id),done=db.reports.filter(r=>r.leaderId===current.id&&reportDate(r)===today);document.getElementById('view').innerHTML=`<div class="stats">${stat('Assigned Lines Today',mine.length)}${stat('Reports Today',done.length)}${stat("My Team's Pickers",db.pickers.filter(p=>p.shift===current.shift).length)}${stat('Total Submitted Reports',db.reports.filter(r=>r.leaderId===current.id).length)}</div><div class="card section"><h3>Today&#39;s Tasks</h3>${mine.length?mine.map(s=>assignmentCard(s)).join(''):'<div class="empty">No lines have been assigned for today.</div>'}</div>`}
 function inspectionDismissed(id){return (db.dismissedInspections||[]).some(x=>String(x)===String(id))}
 function inspectionComplete(id){return inspectionDismissed(id)||db.reports.some(r=>String(r.scheduleId)===String(id))}
 function pruneExpiredCompletedSchedules(){if(current?.role!=='manager')return false;const today=dateISO(),before=db.schedule.length;db.schedule=db.schedule.filter(s=>!(String(s.date||'')<today&&inspectionComplete(s.id)));return db.schedule.length!==before}
