@@ -125,13 +125,16 @@ tbody tr:hover{background:color-mix(in srgb,var(--soft) 42%,var(--panel))}
 <header><div class="brand"><div class="logo">TG</div>TeamGuard</div><div class="header-actions"><button class="secondary" id="themeBtn">☾ Theme</button><button class="secondary hidden" id="logoutBtn">Logout</button></div></header>
 <main>
 <section id="login" class="login-wrap card">
- <div class="logo" style="width:48px;height:48px;font-size:20px">TG</div>
- <h1>TeamGuard Login</h1><p class="muted">Sign in to your account</p>
- <div class="field"><label>Username</label><input id="username" placeholder="Username"></div>
- <div class="field"><label>Password</label><input id="password" type="password" placeholder="••••••••"></div>
- <button type="button" style="width:100%;margin-top:8px" id="loginBtn" onclick="login()">Login</button>
- <div id="loginError" class="muted" style="color:var(--red);margin-top:10px;font-size:13px"></div>
- <p class="footer-note">Get your leader account credentials from the manager.</p>
+ <div class="logo" style="width:52px;height:52px;font-size:21px">TG</div>
+ <div style="margin-top:18px"><span class="pill">SECURE WORKSPACE</span></div>
+ <h1>Welcome to TeamGuard</h1><p class="muted">Sign in to continue to your inspection workspace.</p>
+ <form id="loginForm" onsubmit="event.preventDefault();login()">
+  <div class="field"><label>Email Address</label><input id="email" type="email" autocomplete="username" placeholder="Enter your email" required></div>
+  <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Enter your password" required></div>
+  <button type="submit" style="width:100%;margin-top:8px" id="loginBtn">Sign In →</button>
+ </form>
+ <div id="loginError" role="alert" style="color:var(--red);margin-top:12px;font-size:13px;line-height:1.5"></div>
+ <p class="footer-note">Use the email and password created for your TeamGuard account. Your access is managed by the workspace manager.</p>
 </section>
 <section id="app" class="hidden">
  <div class="between"><div><h1 class="page-title" id="welcome">Dashboard</h1><div class="muted" id="roleInfo"></div></div><span class="pill" id="today"></span></div>
@@ -141,12 +144,16 @@ tbody tr:hover{background:color-mix(in srgb,var(--soft) 42%,var(--panel))}
  </div>
 </section>
 </main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL="https://rnzkamwisslzcbweptbd.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_LHxRrBGwJtkiGruccwjudQ_Gqcq86RQ";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const KEY='teamguard_demo_v1';
-const initial={users:[{id:'u0',username:'manager',password:'1234',name:'Manager',role:'manager',shift:'Both'}],pickers:[],schedule:[],reports:[],activity:[],notifications:[]};
+const initial={users:[],pickers:[],schedule:[],reports:[],activity:[],notifications:[]};
 let db=load(),current=null,page='dashboard',scheduleShift='Day',selectedLeaderId=null;
 db.activity=db.activity||[];db.notifications=db.notifications||[];
-function load(){let data;try{data=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){data=null}if(!data||typeof data!=='object'||Array.isArray(data))data=structuredClone(initial);if(!Array.isArray(data.users))data.users=[];if(!Array.isArray(data.pickers))data.pickers=[];if(!Array.isArray(data.schedule))data.schedule=[];if(!Array.isArray(data.reports))data.reports=[];if(!Array.isArray(data.activity))data.activity=[];if(!Array.isArray(data.notifications))data.notifications=[];if(!data.users.some(u=>u&&u.role==='manager'))data.users.unshift({id:'u0',username:'manager',password:'1234',name:'Manager',role:'manager',shift:'Both'});return data}
+function load(){let data;try{data=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){data=null}if(!data||typeof data!=='object'||Array.isArray(data))data=structuredClone(initial);if(!Array.isArray(data.users))data.users=[];if(!Array.isArray(data.pickers))data.pickers=[];if(!Array.isArray(data.schedule))data.schedule=[];if(!Array.isArray(data.reports))data.reports=[];if(!Array.isArray(data.activity))data.activity=[];if(!Array.isArray(data.notifications))data.notifications=[];return data}
 function save(){localStorage.setItem(KEY,JSON.stringify(db))}
 function logActivity(action,details){db.activity=db.activity||[];db.activity.unshift({id:uid(),action,details,by:current?.name||'System',userId:current?.id||'',at:new Date().toISOString()});db.activity=db.activity.slice(0,500)}
 function notifyManager(title,message,reportId){db.notifications=db.notifications||[];db.notifications.unshift({id:uid(),title,message,reportId:reportId||'',at:new Date().toISOString(),read:false});db.notifications=db.notifications.slice(0,200)}
@@ -155,12 +162,61 @@ function dateISO(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1)
 function niceDate(s){if(!s)return '—';return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
 function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function shiftUsers(){return db.users.filter(u=>u.role==='leader'&&(current.role==='manager'||u.shift===current.shift))}
-const SESSION_KEY='teamguard_session_user';
-function openApp(u){current=u;document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');document.getElementById('logoutBtn').classList.remove('hidden');document.getElementById('welcome').textContent='Welcome, '+u.name;document.getElementById('roleInfo').textContent=u.role==='manager'?'Manager • Day & Night Shift':'Shift Leader • '+u.shift+' Shift';document.getElementById('today').textContent=niceDate(dateISO());render()}
-function login(){const error=document.getElementById('loginError');try{const username=document.getElementById('username').value.trim(),password=document.getElementById('password').value;const u=(Array.isArray(db.users)?db.users:[]).find(x=>x&&String(x.username||'').toLowerCase()===username.toLowerCase()&&String(x.password??'')===password);if(!u){error.textContent='Incorrect username or password. Please check your details.';return}localStorage.setItem(SESSION_KEY,u.id);openApp(u)}catch(e){console.error('TeamGuard login error:',e);error.textContent='Login error: refresh this page (Ctrl + Shift + R) and try again.'}}
-function logout(){current=null;localStorage.removeItem(SESSION_KEY);document.getElementById('app').classList.add('hidden');document.getElementById('login').classList.remove('hidden');document.getElementById('logoutBtn').classList.add('hidden')}
-document.getElementById('loginBtn').addEventListener('click',login);document.getElementById('password').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();login()}});document.getElementById('logoutBtn').onclick=logout;
-const savedSessionId=localStorage.getItem(SESSION_KEY);if(savedSessionId){const savedUser=db.users.find(x=>x.id===savedSessionId);if(savedUser)openApp(savedUser);else localStorage.removeItem(SESSION_KEY)}
+async function loadTeamGuardProfile(authUser){
+ const error=document.getElementById('loginError');
+ try{
+  let {data:member,error:memberError}=await sb.from('teamguard_members').select('workspace_id,user_id,username,role,full_name,shift').eq('user_id',authUser.id).maybeSingle();
+  if(memberError) throw memberError;
+  if(!member){
+   const {error:setupError}=await sb.rpc('create_teamguard_workspace',{workspace_name:'TeamGuard Workspace'});
+   if(setupError) throw setupError;
+   const result=await sb.from('teamguard_members').select('workspace_id,user_id,username,role,full_name,shift').eq('user_id',authUser.id).maybeSingle();
+   if(result.error) throw result.error;
+   member=result.data;
+  }
+  if(!member) throw new Error('This account is not assigned to a TeamGuard workspace. Ask the manager to add your account.');
+  const role=String(member.role||'').toLowerCase();
+  if(role!=='manager'&&role!=='leader') throw new Error('Your account role is not configured. Please contact the manager.');
+  const u={id:authUser.id,authId:authUser.id,workspaceId:member.workspace_id,username:member.username||authUser.email,name:member.full_name||member.username||authUser.email,role,shift:member.shift||'Both',email:authUser.email};
+  const oldIndex=db.users.findIndex(x=>x.id===u.id);
+  if(oldIndex>=0) db.users[oldIndex]={...db.users[oldIndex],...u};
+  else db.users.push(u);
+  save();
+  error.textContent='';
+  openApp(u);
+ }catch(e){
+  console.error('TeamGuard profile error:',e);
+  error.textContent=e.message||'Could not load your workspace. Please try again.';
+  document.getElementById('login').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+ }
+}
+async function login(){
+ const error=document.getElementById('loginError'),btn=document.getElementById('loginBtn');
+ const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;
+ if(!email||!password){error.textContent='Enter your email and password.';return}
+ btn.disabled=true;btn.textContent='Signing in…';error.textContent='';
+ try{
+  const {data,error:authError}=await sb.auth.signInWithPassword({email,password});
+  if(authError) throw authError;
+  await loadTeamGuardProfile(data.user);
+ }catch(e){
+  console.error('TeamGuard login error:',e);
+  error.textContent=e.message||'Login failed. Check your email and password.';
+ }finally{btn.disabled=false;btn.textContent='Sign In →'}
+}
+async function logout(){
+ try{await sb.auth.signOut()}catch(e){console.error('Sign out error:',e)}
+ current=null;
+ document.getElementById('app').classList.add('hidden');
+ document.getElementById('login').classList.remove('hidden');
+ document.getElementById('logoutBtn').classList.add('hidden');
+ document.getElementById('password').value='';
+ document.getElementById('loginError').textContent='';
+}
+document.getElementById('loginBtn').addEventListener('click',e=>{if(document.getElementById('loginForm').reportValidity()){e.preventDefault();login()}});
+document.getElementById('logoutBtn').onclick=logout;
+(async()=>{try{const {data:{session}}=await sb.auth.getSession();if(session?.user)await loadTeamGuardProfile(session.user)}catch(e){console.error('Session restore failed:',e)}})();
 document.getElementById('themeBtn').onclick=()=>{let t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('tg_theme',t)};document.documentElement.dataset.theme=localStorage.getItem('tg_theme')||'light';
 function navItems(){return current.role==='manager'?[['dashboard','▦','Overview'],['leaders','♙','Leaders'],['performance','▥','Employee Performance'],['activity','◷','Activity History'],['notifications','♢','Notifications'+((db.notifications||[]).filter(n=>!n.read).length?' ('+(db.notifications||[]).filter(n=>!n.read).length+')':'')],['pickers','☷','Pickers & Lines'],['schedule','▦','Weekly Schedule'],['reports','▤','All Reports'],['account','⚙','My Account'],['backup','⬇','Backup & Restore']]:[['dashboard','▦','My Dashboard'],['inspection','✓','Today Inspection'],['reports','▤','My Reports']]}
 function render(){document.getElementById('navs').innerHTML=navItems().map(([id,ic,n])=>`<button class="nav ${page===id?'active':''}" onclick="go('${id}')">${ic} ${n}</button>`).join('');let f={dashboard:current.role==='manager'?managerHome:leaderHome,leaders:leadersPage,pickers:pickersPage,schedule:schedulePage,reports:reportsPage,inspection:inspectionPage,account:accountPage,backup:backupPage,performance:performancePage,activity:activityPage,notifications:notificationsPage};(f[page]||f.dashboard)()}
