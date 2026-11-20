@@ -396,11 +396,6 @@ async function restoreSavedSession(){
  loginPanel.classList.add('hidden');
  appPanel.classList.add('hidden');
  error.textContent='';
- const status=document.createElement('div');
- status.id='sessionRestoreStatus';
- status.className='login-wrap card';
- status.textContent='Restoring your saved session…';
- loginPanel.insertAdjacentElement('beforebegin',status);
  try{
   const {data,error:sessionError}=await sb.auth.getSession();
   if(sessionError)throw sessionError;
@@ -413,8 +408,6 @@ async function restoreSavedSession(){
   console.error('Session restore failed:',e);
   loginPanel.classList.remove('hidden');
   error.textContent='Could not restore your saved session. Please sign in again. '+(e.message||'');
- }finally{
-  status.remove();
  }
 }
 restoreSavedSession();
