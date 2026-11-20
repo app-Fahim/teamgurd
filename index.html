@@ -305,6 +305,8 @@ function startCloudAutoSync(){
  lastReportsSignature=JSON.stringify(db.reports||[]);
  lastMembersSignature=JSON.stringify(db.users||[]);
  lastUiDate=dateISO();
+ // Pull cloud changes immediately in the background, without delaying the first dashboard render.
+ pullCloudUpdates();
  cloudPollTimer=setInterval(()=>{
   const today=dateISO();
   if(today!==lastUiDate){
@@ -315,7 +317,7 @@ function startCloudAutoSync(){
    if(!activeSchedule&&(page==='dashboard'||page==='inspection'))render();
   }
   pullCloudUpdates();
- },5000);
+ },15000);
 }
 function stopCloudAutoSync(){
  if(cloudPollTimer)clearInterval(cloudPollTimer);
@@ -339,9 +341,7 @@ async function loadTeamGuardProfile(authUser){
   db.schedule=Array.isArray(cloud.schedule)?cloud.schedule:[];
   db.activity=Array.isArray(cloud.activity)?cloud.activity:[];
   db.notifications=Array.isArray(cloud.notifications)?cloud.notifications:[];
-  const {data:reportRows,error:reportError}=await sb.from('teamguard_reports').select('id,report_data,submitted_by,created_at').eq('workspace_id',u.workspaceId).order('created_at',{ascending:false});
-  if(reportError)throw reportError;
-  db.reports=(reportRows||[]).map(row=>({...row.report_data,id:row.report_data?.id||row.id,cloudId:row.id,leaderId:row.report_data?.leaderId||row.submitted_by}));
+  // Reports load in the background after the dashboard is visible.
   if(role==='manager'){
    const {data:members,error:membersError}=await sb.from('teamguard_members').select('workspace_id,user_id,username,role,full_name,shift').eq('workspace_id',u.workspaceId);
    if(membersError)throw membersError;
