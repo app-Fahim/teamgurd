@@ -156,14 +156,18 @@ db.activity=db.activity||[];db.notifications=db.notifications||[];
 function load(){let data;try{data=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){data=null}if(!data||typeof data!=='object'||Array.isArray(data))data=structuredClone(initial);if(!Array.isArray(data.users))data.users=[];if(!Array.isArray(data.pickers))data.pickers=[];if(!Array.isArray(data.schedule))data.schedule=[];if(!Array.isArray(data.reports))data.reports=[];if(!Array.isArray(data.activity))data.activity=[];if(!Array.isArray(data.notifications))data.notifications=[];return data}
 let cloudSaveChain=Promise.resolve();
 let cloudSyncState='offline';
+let cloudPollTimer=null,cloudPullBusy=false,lastCloudUpdatedAt=null,lastReportsSignature='',lastMembersSignature='';
 function cloudSharedPayload(){return {pickers:db.pickers||[],schedule:db.schedule||[],activity:(db.activity||[]).slice(0,500),notifications:(db.notifications||[]).slice(0,200)}}
 function save(){
  localStorage.setItem(KEY,JSON.stringify(db));
  if(current?.role==='manager'&&current.workspaceId){
   const workspaceId=current.workspaceId,payload=cloudSharedPayload();
+  cloudSyncState='saving';
   cloudSaveChain=cloudSaveChain.then(async()=>{
-   const result=await sb.from('teamguard_app_data').upsert({workspace_id:workspaceId,data:payload,updated_at:new Date().toISOString()},{onConflict:'workspace_id'}).select('workspace_id').single();
+   const stamp=new Date().toISOString();
+   const result=await sb.from('teamguard_app_data').upsert({workspace_id:workspaceId,data:payload,updated_at:stamp},{onConflict:'workspace_id'}).select('workspace_id').single();
    if(result.error)throw result.error;
+   lastCloudUpdatedAt=stamp;
    cloudSyncState='synced';
   }).catch(e=>{cloudSyncState='error';console.error('Cloud save failed:',e);});
  }
@@ -171,8 +175,11 @@ function save(){
 async function saveCloudOrThrow(){
  if(current?.role!=='manager'||!current.workspaceId)throw new Error('Only the Manager can save shared workspace data.');
  await cloudSaveChain;
- const {error}=await sb.from('teamguard_app_data').upsert({workspace_id:current.workspaceId,data:cloudSharedPayload(),updated_at:new Date().toISOString()},{onConflict:'workspace_id'});
+ cloudSyncState='saving';
+ const stamp=new Date().toISOString();
+ const {error}=await sb.from('teamguard_app_data').upsert({workspace_id:current.workspaceId,data:cloudSharedPayload(),updated_at:stamp},{onConflict:'workspace_id'});
  if(error){cloudSyncState='error';throw error;}
+ lastCloudUpdatedAt=stamp;
  cloudSyncState='synced';
 }
 function logActivity(action,details){db.activity=db.activity||[];db.activity.unshift({id:uid(),action,details,by:current?.name||'System',userId:current?.id||'',at:new Date().toISOString()});db.activity=db.activity.slice(0,500)}
@@ -192,6 +199,89 @@ window.openApp=function(u){
  document.getElementById('today').textContent=niceDate(dateISO());
  render();
 }
+
+async function pullCloudUpdates(){
+ if(!current||cloudPullBusy)return;
+ const who=current,workspaceId=who.workspaceId;
+ if(!workspaceId)return;
+ cloudPullBusy=true;
+ let changed=false;
+ try{
+  // Shared Pickers, Schedules, Activity and Notifications
+  if(cloudSyncState==='synced'){
+   const {data:shared,error}=await sb.from('teamguard_app_data')
+    .select('data,updated_at').eq('workspace_id',workspaceId).maybeSingle();
+   if(error)throw error;
+   if(shared&&shared.updated_at&&shared.updated_at!==lastCloudUpdatedAt){
+    const cloud=shared.data||{};
+    db.pickers=Array.isArray(cloud.pickers)?cloud.pickers:[];
+    db.schedule=Array.isArray(cloud.schedule)?cloud.schedule:[];
+    db.activity=Array.isArray(cloud.activity)?cloud.activity:[];
+    db.notifications=Array.isArray(cloud.notifications)?cloud.notifications:[];
+    lastCloudUpdatedAt=shared.updated_at;
+    changed=true;
+   }
+  }
+
+  // Reports are stored separately, so refresh them for both Manager and Leader.
+  const {data:reportRows,error:reportError}=await sb.from('teamguard_reports')
+   .select('id,report_data,submitted_by,created_at')
+   .eq('workspace_id',workspaceId).order('created_at',{ascending:false});
+  if(reportError)throw reportError;
+  const reports=(reportRows||[]).map(row=>({
+   ...(row.report_data||{}),
+   id:row.report_data?.id||row.id,
+   cloudId:row.id,
+   leaderId:row.report_data?.leaderId||row.submitted_by
+  }));
+  const reportSignature=JSON.stringify(reports);
+  if(reportSignature!==lastReportsSignature){
+   db.reports=reports;
+   lastReportsSignature=reportSignature;
+   changed=true;
+  }
+
+  // Keep the workspace roster current for names and Leader changes.
+  const {data:members,error:membersError}=await sb.from('teamguard_members')
+   .select('workspace_id,user_id,username,role,full_name,shift')
+   .eq('workspace_id',workspaceId);
+  if(membersError)throw membersError;
+  const users=(members||[]).map(m=>({
+   id:m.user_id,authId:m.user_id,workspaceId:m.workspace_id,
+   username:m.username,name:m.full_name||m.username,
+   role:m.role,shift:m.shift||'Both'
+  }));
+  if(!users.some(x=>x.id===who.id))users.push(who);
+  const membersSignature=JSON.stringify(users);
+  if(membersSignature!==lastMembersSignature){
+   db.users=users;
+   lastMembersSignature=membersSignature;
+   changed=true;
+  }
+
+  if(changed){
+   localStorage.setItem(KEY,JSON.stringify(db));
+   const active=document.activeElement;
+   const editing=active&&(['INPUT','TEXTAREA','SELECT'].includes(active.tagName));
+   if(current===who&&!editing)render();
+  }
+ }catch(e){
+  console.error('TeamGuard auto-sync error:',e);
+ }finally{
+  cloudPullBusy=false;
+ }
+}
+function startCloudAutoSync(){
+ if(cloudPollTimer)clearInterval(cloudPollTimer);
+ lastReportsSignature=JSON.stringify(db.reports||[]);
+ lastMembersSignature=JSON.stringify(db.users||[]);
+ cloudPollTimer=setInterval(pullCloudUpdates,5000);
+}
+function stopCloudAutoSync(){
+ if(cloudPollTimer)clearInterval(cloudPollTimer);
+ cloudPollTimer=null;
+}
+
 async function loadTeamGuardProfile(authUser){
  const error=document.getElementById('loginError');
  try{
@@ -201,9 +291,10 @@ async function loadTeamGuardProfile(authUser){
   const role=String(member.role||'').toLowerCase();
   if(role!=='manager'&&role!=='leader')throw new Error('Your account role is not configured. Please contact the manager.');
   const u={id:authUser.id,authId:authUser.id,workspaceId:member.workspace_id,username:member.username||authUser.email,name:member.full_name||member.username||authUser.email,role,shift:member.shift||'Both',email:authUser.email};
-  const {data:shared,error:sharedError}=await sb.from('teamguard_app_data').select('data').eq('workspace_id',u.workspaceId).maybeSingle();
+  const {data:shared,error:sharedError}=await sb.from('teamguard_app_data').select('data,updated_at').eq('workspace_id',u.workspaceId).maybeSingle();
   if(sharedError)throw sharedError;
   const cloud=shared?.data||{};
+  lastCloudUpdatedAt=shared?.updated_at||null;
   db.pickers=Array.isArray(cloud.pickers)?cloud.pickers:[];
   db.schedule=Array.isArray(cloud.schedule)?cloud.schedule:[];
   db.activity=Array.isArray(cloud.activity)?cloud.activity:[];
@@ -225,6 +316,7 @@ async function loadTeamGuardProfile(authUser){
   cloudSyncState='synced';
   error.textContent='';
   window.openApp(u);
+  startCloudAutoSync();
  }catch(e){
   console.error('TeamGuard cloud load error:',e);
   error.textContent=e.message||'Could not load cloud workspace. Please try again.';
@@ -247,6 +339,7 @@ async function login(){
  }finally{btn.disabled=false;btn.textContent='Sign In →'}
 }
 async function logout(){
+ stopCloudAutoSync();
  try{await sb.auth.signOut()}catch(e){console.error('Sign out error:',e)}
  current=null;
  document.getElementById('app').classList.add('hidden');
