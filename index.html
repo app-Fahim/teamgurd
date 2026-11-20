@@ -131,7 +131,7 @@ tbody tr:hover{background:color-mix(in srgb,var(--soft) 42%,var(--panel))}
  <form id="loginForm" onsubmit="event.preventDefault();login()">
   <div class="field"><label>Email Address</label><input id="email" type="email" autocomplete="username" placeholder="Enter your email" required></div>
   <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Enter your password" required></div>
-  <button type="submit" style="width:100%;margin-top:8px" id="loginBtn">Sign In →</button>
+  <button type="button" style="width:100%;margin-top:8px" id="loginBtn" onclick="window.login()">Sign In →</button>
  </form>
  <div id="loginError" role="alert" style="color:var(--red);margin-top:12px;font-size:13px;line-height:1.5"></div>
  <p class="footer-note">Use the email and password created for your TeamGuard account. Your access is managed by the workspace manager.</p>
@@ -340,6 +340,7 @@ async function login(){
   error.textContent=e.message||'Login failed. Check your email and password.';
  }finally{btn.disabled=false;btn.textContent='Sign In →'}
 }
+window.login=login;
 async function logout(){
  stopCloudAutoSync();
  try{await sb.auth.signOut()}catch(e){console.error('Sign out error:',e)}
