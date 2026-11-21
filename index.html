@@ -737,11 +737,11 @@ async function lookupInspectionProduct(auto=false){
  const products=db.products||[];
  const barcodeOf=p=>String(p.barcode??p.Barcode??p.ean??p.upc??'').trim().replace(/\s+/g,'');
  let matches=products.filter(p=>barcodeOf(p)===code);
- if(!matches.length&&code.length>=5)matches=products.filter(p=>barcodeOf(p).endsWith(code));
- if(!matches.length){if(status)status.textContent=auto?'No matching product found. Try the full barcode or last 5–6 digits.':'Barcode not found in the uploaded product list.';return}
+ if(!matches.length&&code.length>=4)matches=products.filter(p=>barcodeOf(p).includes(code));
+ if(!matches.length){if(status)status.textContent=auto?'No matching product found. Try the full barcode or at least 4 consecutive digits.':'Barcode not found in the uploaded product list.';return}
  window.inspectionSearchMatches=matches;
- if(status)status.textContent=matches.length===1?'Product found. Tap Add Product beside it to select.':matches.length+' matching products. Choose the correct one.';
- if(panel)panel.innerHTML=matches.slice(0,10).map((p,i)=>'<div class="between" style="padding:10px;border:1px solid var(--line);border-radius:9px;margin-top:7px"><div><b>'+esc(p.name||p.product_name||p.productName||'Unnamed product')+'</b><div class="muted" style="font-size:12px">Barcode: '+esc(barcodeOf(p)||'—')+' • SKU: '+esc(p.sku||p.SKU||'—')+'</div></div><button class="small" type="button" onclick="selectInspectionProduct('+i+')">Select</button></div>').join('');
+ if(status)status.textContent=matches.length===1?'Product found. Tap Select beside it.':matches.length+' matching products. Choose the correct one.';
+ if(panel)panel.innerHTML=matches.map((p,i)=>'<div class="between" style="padding:10px;border:1px solid var(--line);border-radius:9px;margin-top:7px"><div><b>'+esc(p.name||p.product_name||p.productName||'Unnamed product')+'</b><div class="muted" style="font-size:12px">Barcode: '+esc(barcodeOf(p)||'—')+' • SKU: '+esc(p.sku||p.SKU||'—')+'</div></div><button class="small" type="button" onclick="selectInspectionProduct('+i+')">Select</button></div>').join('');
 }
 
 let cropImage=null,cropZoom=1,cropX=50,cropY=50;
