@@ -686,7 +686,7 @@ function startInspection(id){
  <button id="addInspectionProductBtn" class="secondary" type="button" onclick="addItem()">+ Add Product</button>
  <div id="itemList" class="section"></div>
  <div class="field"><label>Overall Problems / Additional Problems</label><textarea id="overallNote" placeholder="Describe any additional problems..."></textarea></div>\n <div class="field"><label>Attach photos to overall problems (up to 3)</label><div class="row"><label class="secondary small" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer">📷 Camera<input type="file" accept="image/*" capture="environment" onchange="prepareOverallPhotos(this)" style="display:none"></label><label class="secondary small" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer">🖼 Gallery<input type="file" accept="image/*" multiple onchange="prepareOverallPhotos(this)" style="display:none"></label></div><div id="overallPhotoPreview" class="muted">No overall photos selected.</div></div>
- <div class="row"><button onclick="submitReport()">Submit Report</button><button class="secondary" onclick="saveInspectionDraft();go('dashboard')">Save & Exit</button></div>
+ <div class="row"><button onclick="submitReport()">Submit Report</button></div>
  </div>`;
  setInspectionEntryMode('barcode');drawItems();restoreInspectionDraft(id);
  const view=document.getElementById('view');if(view){view.oninput=()=>saveInspectionDraft();view.onchange=()=>saveInspectionDraft()}
