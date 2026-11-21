@@ -479,7 +479,7 @@ let clickable=(label,value,target)=>`<div class="stat" role="button" tabindex="0
 document.getElementById('view').innerHTML=`<div class="stats">${clickable('Total Pickers',pickerCount,'pickers')}${clickable('Shift Leader',leaderCount,'leaders')}${clickable("Today's Schedule",scheduled,'schedule')}${clickable('Reports Submitted Today',done,'reports')}</div>
 <div class="card section"><div class="between"><h3>Today's Inspections</h3><button class="small" onclick="go('schedule')">View Schedule</button></div>${todayAssignments()}</div>
 ${overdueAssignments().length?`<div class="card section"><h3>Not Completed — Last 1 Day</h3>${overdueAssignments().map(overdueAssignmentCard).join('')}</div>`:''}
-<div class="card section"><h3>Recent Reports</h3>${reportTable(db.reports.slice().sort((a,b)=>(b.created||'').localeCompare(a.created||'')).slice(0,5))}</div>`;
+`;
 }
 
 function reportDate(r){if(r.created){let d=new Date(r.created);if(!isNaN(d.getTime()))return dateISO(d)}return r.date||''}
