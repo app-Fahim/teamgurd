@@ -119,6 +119,10 @@ tbody tr:hover{background:color-mix(in srgb,var(--soft) 42%,var(--panel))}
  .stat strong{font-size:24px}
 }
 
+/* Calendar icon contrast follows the active theme */
+input[type="date"]{color-scheme:light}
+[data-theme="dark"] input[type="date"]{color-scheme:dark}
+
 /* Glowing inspection status labels */
 .pill.status-pending{background:#eef0f3;color:#596273;border:1px solid #cbd0d8;box-shadow:0 0 7px rgba(107,114,128,.42),0 0 13px rgba(107,114,128,.18)}
 .pill.status-progress{background:#fff4cc;color:#946200;border:1px solid #f3c64f;box-shadow:0 0 7px rgba(245,183,0,.55),0 0 15px rgba(245,183,0,.24)}
