@@ -199,6 +199,7 @@ async function saveCloudOrThrow(){
 }
 function logActivity(action,details){db.activity=db.activity||[];db.activity.unshift({id:uid(),action,details,by:current?.name||'System',userId:current?.id||'',at:new Date().toISOString()});db.activity=db.activity.slice(0,500)}
 function notifyManager(title,message,reportId){db.notifications=db.notifications||[];db.notifications.unshift({id:uid(),title,message,reportId:reportId||'',at:new Date().toISOString(),read:false});db.notifications=db.notifications.slice(0,200)}
+function notifyMissedLeaderTasks(){if(current?.role!=='manager')return false;const today=dateISO();let added=false;for(const task of (db.schedule||[])){if(!task.date||String(task.date)>=today||task.missedNotifiedAt||inspectionComplete(task.id))continue;const leader=db.users.find(x=>String(x.id)===String(task.leaderId)),picker=db.pickers.find(x=>String(x.id)===String(task.pickerId));notifyManager('Task Not Completed',(leader?.name||'Leader')+' did not complete the task on '+(picker?.line||picker?.name||'assigned')+' line for '+niceDate(task.date)+'.');task.missedNotifiedAt=new Date().toISOString();added=true;}if(added)save();return added}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function dateISO(d=new Date()){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function niceDate(s){if(!s)return '—';return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
@@ -245,6 +246,7 @@ async function pullCloudUpdates(){
   if(statusError)throw statusError;
   const nextStatuses=(statusRows||[]).map(x=>({scheduleId:String(x.schedule_id),leaderId:x.leader_id,status:x.status,updatedAt:x.updated_at}));
   if(JSON.stringify(nextStatuses)!==JSON.stringify(db.inspectionStatuses||[])){db.inspectionStatuses=nextStatuses;changed=true;}
+   if(notifyMissedLeaderTasks())changed=true;
 
   // Reports are stored separately, so refresh them for both Manager and Leader.
   const {data:reportRows,error:reportError}=await sb.from('teamguard_reports')
