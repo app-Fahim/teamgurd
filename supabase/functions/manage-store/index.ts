@@ -79,6 +79,68 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (action === "reports") {
+      const workspaceId = String(body?.workspaceId || "").trim();
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(workspaceId)) {
+        return json(400, { error: "A valid Store ID is required." });
+      }
+
+      const { data: workspace, error: workspaceError } = await admin
+        .from("teamguard_workspaces")
+        .select("id,name")
+        .eq("id", workspaceId)
+        .maybeSingle();
+      if (workspaceError) throw workspaceError;
+      if (!workspace) return json(404, { error: "Store not found." });
+
+      const [{ data: reports, error: reportsError }, { data: members, error: membersError }, { data: shared, error: sharedError }] = await Promise.all([
+        admin.from("teamguard_reports")
+          .select("id,workspace_id,submitted_by,report_data,created_at")
+          .eq("workspace_id", workspaceId)
+          .order("created_at", { ascending: false })
+          .limit(1000),
+        admin.from("teamguard_members")
+          .select("user_id,full_name,username,role")
+          .eq("workspace_id", workspaceId),
+        admin.from("teamguard_app_data")
+          .select("data")
+          .eq("workspace_id", workspaceId)
+          .maybeSingle(),
+      ]);
+      if (reportsError) throw reportsError;
+      if (membersError) throw membersError;
+      if (sharedError) throw sharedError;
+
+      const memberById = new Map((members || []).map((m) => [m.user_id, {
+        name: m.full_name || m.username || "—",
+        role: m.role,
+      }]));
+      const pickers = Array.isArray(shared?.data?.pickers) ? shared.data.pickers : [];
+      const pickerById = new Map(pickers.map((p) => [String(p.id), {
+        name: p.name || p.pickerName || "—",
+        line: p.line || "—",
+      }]));
+
+      return json(200, {
+        store: workspace,
+        reports: (reports || []).map((row) => {
+          const report = row.report_data && typeof row.report_data === "object" ? row.report_data : {};
+          const leader = memberById.get(row.submitted_by) || {};
+          const picker = pickerById.get(String(report.pickerId)) || {};
+          return {
+            id: row.id,
+            date: report.date || row.created_at,
+            shift: report.shift || "—",
+            created_at: row.created_at,
+            leader_name: leader.name || "—",
+            picker_name: picker.name || "—",
+            picker_line: picker.line || "—",
+            report_data: report,
+          };
+        }),
+      });
+    }
+
     if (action !== "create") return json(400, { error: "Unsupported action." });
 
     const storeName = String(body?.storeName || "").trim();
