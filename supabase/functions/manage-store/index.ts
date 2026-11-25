@@ -141,6 +141,76 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (action === "update-store-manager") {
+      const workspaceId = String(body?.workspaceId || "").trim();
+      const storeName = String(body?.storeName || "").trim();
+      const managerName = String(body?.managerName || "").trim();
+      const managerUsername = String(body?.managerUsername || "").trim();
+      const managerPassword = String(body?.managerPassword || "");
+
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(workspaceId)) {
+        return json(400, { error: "A valid Store ID is required." });
+      }
+      if (!storeName || storeName.length > 120 || !managerName || managerName.length > 120 || !managerUsername || managerUsername.length > 60) {
+        return json(400, { error: "Store name, Manager name and username are required and must be within the allowed length." });
+      }
+      if (managerPassword && managerPassword.length < 8) {
+        return json(400, { error: "New Manager password must be at least 8 characters." });
+      }
+
+      const { data: workspace, error: workspaceLookupError } = await admin
+        .from("teamguard_workspaces").select("id").eq("id", workspaceId).maybeSingle();
+      if (workspaceLookupError) throw workspaceLookupError;
+      if (!workspace) return json(404, { error: "Store not found." });
+
+      const { data: manager, error: managerLookupError } = await admin
+        .from("teamguard_members")
+        .select("user_id,username")
+        .eq("workspace_id", workspaceId)
+        .eq("role", "manager")
+        .maybeSingle();
+      if (managerLookupError) throw managerLookupError;
+      if (!manager) return json(404, { error: "No Manager account is assigned to this Store." });
+
+      const { data: duplicate, error: duplicateError } = await admin
+        .from("teamguard_members")
+        .select("user_id")
+        .eq("workspace_id", workspaceId)
+        .ilike("username", managerUsername)
+        .neq("user_id", manager.user_id)
+        .limit(1);
+      if (duplicateError) throw duplicateError;
+      if (duplicate?.length) return json(409, { error: "This username is already used in this Store." });
+
+      const { data: authUserData, error: authUserError } = await admin.auth.admin.getUserById(manager.user_id);
+      if (authUserError || !authUserData?.user) throw authUserError || new Error("Manager Auth account was not found.");
+
+      const { error: memberUpdateError } = await admin.from("teamguard_members")
+        .update({ full_name: managerName, username: managerUsername })
+        .eq("workspace_id", workspaceId)
+        .eq("user_id", manager.user_id)
+        .eq("role", "manager");
+      if (memberUpdateError) throw memberUpdateError;
+
+      const authUpdate: { user_metadata: Record<string, unknown>; password?: string } = {
+        user_metadata: { ...(authUserData.user.user_metadata || {}), full_name: managerName },
+      };
+      if (managerPassword) authUpdate.password = managerPassword;
+      const { error: authUpdateError } = await admin.auth.admin.updateUserById(manager.user_id, authUpdate);
+      if (authUpdateError) throw authUpdateError;
+
+      const { error: storeUpdateError } = await admin.from("teamguard_workspaces")
+        .update({ name: storeName }).eq("id", workspaceId);
+      if (storeUpdateError) throw storeUpdateError;
+
+      return json(200, {
+        success: true,
+        store: { id: workspaceId, name: storeName },
+        manager: { user_id: manager.user_id, name: managerName, username: managerUsername },
+        password_changed: Boolean(managerPassword),
+      });
+    }
+
     if (action !== "create") return json(400, { error: "Unsupported action." });
 
     const storeName = String(body?.storeName || "").trim();
