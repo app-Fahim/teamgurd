@@ -19,25 +19,22 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+    if (!supabaseUrl || !serviceRoleKey) {
       return json(500, { error: "Server configuration is incomplete." });
     }
 
     const authorization = req.headers.get("Authorization") || "";
-    const token = authorization.replace(/^Bearer\s+/i, "").trim();
+    const token = authorization.replace(/^Bearer\\s+/i, "").trim();
     if (!token) return json(401, { error: "Authentication required." });
-
-    const userClient = createClient(supabaseUrl, anonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data: authData, error: authError } = await userClient.auth.getUser(token);
-    if (authError || !authData.user) return json(401, { error: "Invalid session." });
 
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+
+    // Validate the caller's Supabase Auth access token before any privileged action.
+    const { data: authData, error: authError } = await admin.auth.getUser(token);
+    if (authError || !authData.user) return json(401, { error: "Invalid session." });
 
     const { data: platformAdmin, error: platformError } = await admin
       .from("teamguard_platform_admins")
@@ -82,9 +79,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    if (action !== "create") {
-      return json(400, { error: "Unsupported action." });
-    }
+    if (action !== "create") return json(400, { error: "Unsupported action." });
 
     const storeName = String(body?.storeName || "").trim();
     const managerName = String(body?.managerName || "").trim();
@@ -98,7 +93,7 @@ Deno.serve(async (req: Request) => {
     if (storeName.length > 120 || managerName.length > 120 || managerUsername.length > 60) {
       return json(400, { error: "One or more fields are too long." });
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(managerEmail)) {
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(managerEmail)) {
       return json(400, { error: "Enter a valid Manager email address." });
     }
     if (managerPassword.length < 8) {
@@ -118,7 +113,7 @@ Deno.serve(async (req: Request) => {
         email: managerEmail,
         password: managerPassword,
         email_confirm: true,
-        user_metadata: { full_name: managerName, teamguard_role: "manager" },
+        user_metadata: { full_name: managerName },
       });
       if (createUserError) throw createUserError;
       createdUserId = userResult.user.id;
@@ -132,10 +127,15 @@ Deno.serve(async (req: Request) => {
         shift: "Both",
       });
       if (memberError) throw memberError;
+
+      // Create the shared-data row expected by the existing Manager login flow.
+      const { error: appDataError } = await admin.from("teamguard_app_data").insert({
+        workspace_id: workspace.id,
+        data: {},
+      });
+      if (appDataError) throw appDataError;
     } catch (creationError) {
-      if (createdUserId) {
-        await admin.auth.admin.deleteUser(createdUserId);
-      }
+      if (createdUserId) await admin.auth.admin.deleteUser(createdUserId);
       await admin.from("teamguard_workspaces").delete().eq("id", workspace.id);
       throw creationError;
     }
