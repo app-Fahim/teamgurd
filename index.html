@@ -486,7 +486,25 @@ async function superAdminAccountPage(){
  document.getElementById('navs').innerHTML='<button class="nav" type="button" onclick="superAdminPage()">▦ Store Management</button><button class="nav active" type="button" onclick="superAdminAccountPage()">⚙ My Account</button>';
  let email='';
  try{const {data}=await sb.auth.getUser();email=data?.user?.email||''}catch(e){}
- document.getElementById('view').innerHTML=`<div class="card"><h3>Super Admin Account Settings</h3><p class="muted">Change your Super Admin login password. The new password will be saved to Supabase Cloud Authentication and used on every device.</p><div class="field"><label>Login Email</label><input value="${esc(email)}" readonly></div><div class="field"><label>New Password</label><input id="newSuperAdminPass" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"></div><div class="field"><label>Confirm New Password</label><input id="confirmSuperAdminPass" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter new password"></div><button id="saveSuperAdminPassBtn" type="button" onclick="updateSuperAdminPassword()">Save Password</button><div id="superAdminAccountMessage" class="muted" style="margin-top:12px;font-size:13px"></div></div>`;
+ document.getElementById('view').innerHTML=`<div class="card"><h3>Super Admin Account Settings</h3><p class="muted">Update your login email and password. Changes are saved through Supabase Cloud Authentication and apply across devices.</p><div class="field"><label>Current Login Email</label><input value="${esc(email)}" readonly></div><div class="field"><label>New Login Email</label><input id="newSuperAdminEmail" type="email" autocomplete="email" placeholder="Enter new email address"></div><button id="saveSuperAdminEmailBtn" type="button" onclick="updateSuperAdminEmail()">Update Login Email</button><div id="superAdminEmailMessage" class="muted" style="margin-top:10px;font-size:13px"></div><hr style="border:0;border-top:1px solid var(--line);margin:22px 0"><div class="field"><label>New Password</label><input id="newSuperAdminPass" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"></div><div class="field"><label>Confirm New Password</label><input id="confirmSuperAdminPass" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter new password"></div><button id="saveSuperAdminPassBtn" type="button" onclick="updateSuperAdminPassword()">Save Password</button><div id="superAdminAccountMessage" class="muted" style="margin-top:12px;font-size:13px"></div></div>`;
+}
+async function updateSuperAdminEmail(){
+ if(current?.role!=='super_admin')return;
+ const email=(document.getElementById('newSuperAdminEmail')?.value||'').trim().toLowerCase();
+ const msg=document.getElementById('superAdminEmailMessage'),btn=document.getElementById('saveSuperAdminEmailBtn');
+ if(!email||!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)){msg.textContent='Please enter a valid email address.';return}
+ const {data:authData}=await sb.auth.getUser();
+ if(authData?.user?.email?.toLowerCase()===email){msg.textContent='This is already your current login email.';return}
+ if(!confirm('Request a change of Super Admin login email to '+email+'? Supabase may require email confirmation before the new address becomes active.'))return;
+ btn.disabled=true;msg.textContent='Sending email change request to Supabase Cloud…';
+ try{
+  const {data,error}=await sb.auth.updateUser({email});
+  if(error)throw error;
+  if(!data?.user)throw new Error('Supabase did not confirm the email change request.');
+  document.getElementById('newSuperAdminEmail').value='';
+  msg.textContent='Email change request submitted to Supabase. Check the confirmation email(s) and confirm the change; the new login email becomes active only after Supabase verification.';
+ }catch(e){msg.textContent=e.message||'Could not update login email.'}
+ finally{btn.disabled=false}
 }
 async function updateSuperAdminPassword(){
  if(current?.role!=='super_admin')return;
