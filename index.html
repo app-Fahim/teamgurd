@@ -456,8 +456,25 @@ async function loadSuperAdminStores(){
   if(error)throw error;
   if(data?.error)throw new Error(data.error);
   const stores=Array.isArray(data?.stores)?data.stores:[];
-  box.innerHTML=stores.length?'<div class="table-wrap"><table><thead><tr><th>Store Name</th><th>Manager</th><th>Created</th><th>Reports</th></tr></thead><tbody>'+stores.map(st=>'<tr><td><b style="font-size:15px">'+esc(st.name)+'</b><div class="muted" style="font-size:11px">Store ID: '+esc(st.id)+'</div></td><td>'+esc(st.manager?.full_name||'Not assigned')+'<div class="muted" style="font-size:11px">'+esc(st.manager?.username||'')+'</div></td><td>'+esc(st.created_at?new Date(st.created_at).toLocaleDateString():'—')+'</td><td><button class="small" type="button" onclick="showSuperAdminReports(\''+esc(st.id)+'\')">View Reports</button></td></tr>').join('')+'</tbody></table></div>':'<div class="empty">No stores have been created yet.</div>';
+  box.innerHTML=stores.length?'<div class="table-wrap"><table><thead><tr><th>Store Name</th><th>Manager</th><th>Created</th><th>Actions</th></tr></thead><tbody>'+stores.map(st=>'<tr><td><b style="font-size:15px">'+esc(st.name)+'</b><div class="muted" style="font-size:11px">Store ID: '+esc(st.id)+'</div></td><td>'+esc(st.manager?.full_name||'Not assigned')+'<div class="muted" style="font-size:11px">'+esc(st.manager?.username||'')+'</div></td><td>'+esc(st.created_at?new Date(st.created_at).toLocaleDateString():'—')+'</td><td><div class="actions"><button class="small" type="button" onclick="editSuperAdminStore(\''+esc(st.id)+'\',\''+esc(st.name)+'\',\''+esc(st.manager?.full_name||'')+'\',\''+esc(st.manager?.username||'')+'\')">Edit Store / Manager</button><button class="small secondary" type="button" onclick="showSuperAdminReports(\''+esc(st.id)+'\')">View Reports</button></div></td></tr>').join('')+'</tbody></table></div>':'<div class="empty">No stores have been created yet.</div>';
  }catch(e){box.innerHTML='<div class="notice">'+esc(e.message||'Could not load stores. Deploy the manage-store Edge Function first.')+'</div>'}
+}
+async function editSuperAdminStore(workspaceId,oldStoreName,oldManagerName,oldUsername){
+ if(current?.role!=='super_admin')return;
+ const storeName=prompt('Store name:',oldStoreName);if(storeName===null)return;
+ const managerName=prompt('Manager full name:',oldManagerName);if(managerName===null)return;
+ const managerUsername=prompt('Manager username:',oldUsername);if(managerUsername===null)return;
+ const managerPassword=prompt('New Manager password (leave blank to keep current password):','');if(managerPassword===null)return;
+ if(!storeName.trim()||!managerName.trim()||!managerUsername.trim()){alert('Store name, Manager name and username cannot be empty.');return}
+ if(managerPassword&&managerPassword.length<8){alert('New password must be at least 8 characters.');return}
+ if(!confirm('Save Store and Manager changes to Supabase Cloud?'))return;
+ try{
+  const {data,error}=await sb.functions.invoke('manage-store',{body:{action:'update-store-manager',workspaceId,storeName:storeName.trim(),managerName:managerName.trim(),managerUsername:managerUsername.trim(),managerPassword}});
+  if(error)throw error;
+  if(data?.error)throw new Error(data.error);
+  alert('Store and Manager details updated in Cloud.');
+  await loadSuperAdminStores();
+ }catch(e){alert(e.message||'Could not update Store / Manager.')}
 }
 function superAdminPage(){
  document.getElementById('navs').innerHTML='<button class="nav active" type="button" onclick="superAdminPage()">▦ Store Management</button><button class="nav" type="button" onclick="superAdminAccountPage()">⚙ My Account</button>';
