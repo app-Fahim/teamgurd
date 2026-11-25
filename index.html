@@ -211,7 +211,7 @@ window.openApp=function(u){
  document.getElementById('app').classList.remove('hidden');
  document.getElementById('logoutBtn').classList.remove('hidden');
  document.getElementById('welcome').textContent='Welcome, '+u.name;
- document.getElementById('roleInfo').textContent=u.role==='manager'?'Manager • Day & Night Shift':'Shift Leader • '+u.shift+' Shift';
+ document.getElementById('roleInfo').textContent=u.role==='super_admin'?'Platform Super Admin':u.role==='manager'?'Manager • Day & Night Shift':'Shift Leader • '+u.shift+' Shift';
  document.getElementById('today').textContent=niceDate(dateISO());
  render();
 }
@@ -349,6 +349,15 @@ function stopCloudAutoSync(){
 async function loadTeamGuardProfile(authUser){
  const error=document.getElementById('loginError');
  try{
+  const {data:platformAdmin,error:platformAdminError}=await sb.from('teamguard_platform_admins').select('user_id').eq('user_id',authUser.id).maybeSingle();
+  if(platformAdminError)throw platformAdminError;
+  if(platformAdmin){
+   const adminUser={id:authUser.id,authId:authUser.id,username:authUser.email||'super_admin',name:'Super Admin',role:'super_admin',email:authUser.email||''};
+   cloudSyncState='idle';
+   error.textContent='';
+   window.openApp(adminUser);
+   return;
+  }
   const {data:member,error:memberError}=await sb.from('teamguard_members').select('workspace_id,user_id,username,role,full_name,shift').eq('user_id',authUser.id).maybeSingle();
   if(memberError)throw memberError;
   if(!member)throw new Error('This account is not assigned to a TeamGuard workspace. Ask the manager to add your account.');
@@ -438,8 +447,40 @@ async function restoreSavedSession(){
 }
 restoreSavedSession();
 document.getElementById('themeBtn').onclick=()=>{let t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('tg_theme',t)};document.documentElement.dataset.theme=localStorage.getItem('tg_theme')||'light';
+async function loadSuperAdminStores(){
+ const box=document.getElementById('superAdminStores');
+ if(!box)return;
+ box.innerHTML='<div class="muted">Loading stores…</div>';
+ try{
+  const {data,error}=await sb.functions.invoke('manage-store',{body:{action:'list'}});
+  if(error)throw error;
+  if(data?.error)throw new Error(data.error);
+  const stores=Array.isArray(data?.stores)?data.stores:[];
+  box.innerHTML=stores.length?'<div class="table-wrap"><table><thead><tr><th>Store</th><th>Manager</th><th>Created</th></tr></thead><tbody>'+stores.map(st=>'<tr><td><b>'+esc(st.name)+'</b><div class="muted" style="font-size:11px">'+esc(st.id)+'</div></td><td>'+esc(st.manager?.full_name||'Not assigned')+'<div class="muted" style="font-size:11px">'+esc(st.manager?.username||'')+'</div></td><td>'+esc(st.created_at?new Date(st.created_at).toLocaleDateString():'—')+'</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">No stores have been created yet.</div>';
+ }catch(e){box.innerHTML='<div class="notice">'+esc(e.message||'Could not load stores. Deploy the manage-store Edge Function first.')+'</div>'}
+}
+function superAdminPage(){
+ document.getElementById('navs').innerHTML='<button class="nav active" type="button">▦ Store Management</button>';
+ document.getElementById('view').innerHTML=`<div class="card"><div class="between"><div><h3>Multi-Store Management</h3><p class="muted">Create a separate workspace and Manager login for each store.</p></div><span class="pill">SUPER ADMIN</span></div><form id="createStoreForm" onsubmit="createTeamGuardStore(event)"><div class="field"><label>Store Name</label><input id="newStoreName" required maxlength="120" placeholder="Enter store name"></div><div class="grid-2"><div class="field"><label>Manager Full Name</label><input id="newStoreManagerName" required maxlength="120" placeholder="Manager name"></div><div class="field"><label>Manager Username</label><input id="newStoreManagerUsername" required maxlength="60" placeholder="Manager username"></div></div><div class="field"><label>Manager Email</label><input id="newStoreManagerEmail" type="email" required placeholder="manager@example.com"></div><div class="field"><label>Temporary Manager Password</label><input id="newStoreManagerPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></div><button id="createStoreBtn" type="submit">Create Store & Manager</button><div id="createStoreMessage" class="muted" style="margin-top:12px;font-size:13px"></div></form></div><div class="card" style="margin-top:16px"><div class="between"><h3>Stores</h3><button class="secondary" type="button" onclick="loadSuperAdminStores()">Refresh</button></div><div id="superAdminStores"><div class="muted">Loading stores…</div></div></div>`;
+ loadSuperAdminStores();
+}
+async function createTeamGuardStore(event){
+ event.preventDefault();
+ const btn=document.getElementById('createStoreBtn'),msg=document.getElementById('createStoreMessage');
+ const payload={action:'create',storeName:val('newStoreName'),managerName:val('newStoreManagerName'),managerUsername:val('newStoreManagerUsername'),managerEmail:val('newStoreManagerEmail'),managerPassword:document.getElementById('newStoreManagerPassword').value};
+ btn.disabled=true;msg.textContent='Creating Store and Manager account…';
+ try{
+  const {data,error}=await sb.functions.invoke('manage-store',{body:payload});
+  if(error)throw error;
+  if(data?.error)throw new Error(data.error);
+  document.getElementById('createStoreForm').reset();
+  msg.textContent='Store created successfully. Manager can now sign in with the email and password you set.';
+  await loadSuperAdminStores();
+ }catch(e){msg.textContent=e.message||'Could not create Store.'}
+ finally{btn.disabled=false}
+}
 function navItems(){return current.role==='manager'?[['dashboard','▦','Overview'],['productUpload','⇧','Upload Products'],['leaders','♙','Leaders'],['performance','▥','Employee Performance'],['notifications','♢','Notifications'+((db.notifications||[]).filter(n=>!n.read).length?' ('+(db.notifications||[]).filter(n=>!n.read).length+')':'')],['pickers','☷','Pickers & Lines'],['schedule','▦','Weekly Schedule'],['reports','▤','All Reports'],['account','⚙','My Account'],['backup','⬇','Backup & Restore']]:[['dashboard','▦','My Dashboard'],['inspection','✓','Today Inspection'],['reports','▤','My Reports']]}
-function render(){if(pruneExpiredNotifications())save();document.getElementById('navs').innerHTML=navItems().map(([id,ic,n])=>`<button class="nav ${page===id?'active':''}" onclick="go('${id}')">${ic} ${n}</button>`).join('');let f={dashboard:current.role==='manager'?managerHome:leaderHome,productUpload:productUploadPage,leaders:leadersPage,pickers:pickersPage,schedule:schedulePage,reports:reportsPage,inspection:inspectionPage,account:accountPage,backup:backupPage,performance:performancePage,activity:activityPage,notifications:notificationsPage};(f[page]||f.dashboard)()}
+function render(){if(current?.role==='super_admin'){superAdminPage();return}if(pruneExpiredNotifications())save();document.getElementById('navs').innerHTML=navItems().map(([id,ic,n])=>`<button class="nav ${page===id?'active':''}" onclick="go('${id}')">${ic} ${n}</button>`).join('');let f={dashboard:current.role==='manager'?managerHome:leaderHome,productUpload:productUploadPage,leaders:leadersPage,pickers:pickersPage,schedule:schedulePage,reports:reportsPage,inspection:inspectionPage,account:accountPage,backup:backupPage,performance:performancePage,activity:activityPage,notifications:notificationsPage};(f[page]||f.dashboard)()}
 function go(p){if(activeSchedule)saveInspectionDraft();page=p;render()}
 function backupPage(){if(current?.role!=='manager'){go('dashboard');return}let size=new Blob([JSON.stringify(db)]).size;document.getElementById('view').innerHTML=`<div class="card"><h3>Backup & Restore</h3><p class="muted">Save a complete copy of the data currently stored in this browser before connecting Supabase.</p><div class="notice"><b>Important:</b> This backup includes manager/leader account details and reports with photos. Keep the downloaded file private. Do not send it to anyone.</div><div class="stats" style="grid-template-columns:repeat(2,1fr)"><div class="stat"><small>Current backup size</small><strong>${(size/1024).toFixed(1)} KB</strong></div><div class="stat"><small>Saved data</small><strong>${db.users.length+db.pickers.length+db.schedule.length+db.reports.length}</strong><small>Accounts, pickers, schedules & reports</small></div></div><div class="section"><button onclick="downloadBackup()">⬇ Download Full Backup</button></div><div class="section"><h3>Restore a Backup</h3><p class="muted">Choose a TeamGuard backup JSON file. Restoring replaces the data currently stored in this browser.</p><input id="backupFile" type="file" accept=".json,application/json" style="display:block;margin:12px 0"><button class="secondary" onclick="restoreBackup()">Restore Backup</button></div><p class="footer-note">Backup is downloaded to your device. It is not uploaded to Supabase automatically. Keep at least one safe copy before any migration.</p></div>`}
 function downloadBackup(){if(current?.role!=='manager')return alert('Only the manager can create a full backup.');try{let payload={app:'TeamGuard',formatVersion:1,exportedAt:new Date().toISOString(),data:db};let blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='TeamGuard-Backup-'+dateISO()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);alert('Backup downloaded. Keep the JSON file private and safe.')}catch(e){console.error(e);alert('Could not create backup. Please check available device storage.')}}
