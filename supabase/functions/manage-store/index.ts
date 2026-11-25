@@ -25,7 +25,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const authorization = req.headers.get("Authorization") || "";
-    const token = authorization.replace(/^Bearer\\s+/i, "").trim();
+    const token = authorization.replace(/^Bearer\s+/i, "").trim();
     if (!token) return json(401, { error: "Authentication required." });
 
     const admin = createClient(supabaseUrl, serviceRoleKey, {
@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
     if (storeName.length > 120 || managerName.length > 120 || managerUsername.length > 60) {
       return json(400, { error: "One or more fields are too long." });
     }
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(managerEmail)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(managerEmail)) {
       return json(400, { error: "Enter a valid Manager email address." });
     }
     if (managerPassword.length < 8) {
