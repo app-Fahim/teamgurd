@@ -460,9 +460,32 @@ async function loadSuperAdminStores(){
  }catch(e){box.innerHTML='<div class="notice">'+esc(e.message||'Could not load stores. Deploy the manage-store Edge Function first.')+'</div>'}
 }
 function superAdminPage(){
- document.getElementById('navs').innerHTML='<button class="nav active" type="button">▦ Store Management</button>';
+ document.getElementById('navs').innerHTML='<button class="nav active" type="button" onclick="superAdminPage()">▦ Store Management</button><button class="nav" type="button" onclick="superAdminAccountPage()">⚙ My Account</button>';
  document.getElementById('view').innerHTML=`<div class="card"><div class="between"><div><h3>Multi-Store Management</h3><p class="muted">Create a separate workspace and Manager login for each store.</p></div><span class="pill">SUPER ADMIN</span></div><form id="createStoreForm" onsubmit="createTeamGuardStore(event)"><div class="field"><label>Store Name</label><input id="newStoreName" required maxlength="120" placeholder="Enter store name"></div><div class="grid-2"><div class="field"><label>Manager Full Name</label><input id="newStoreManagerName" required maxlength="120" placeholder="Manager name"></div><div class="field"><label>Manager Username</label><input id="newStoreManagerUsername" required maxlength="60" placeholder="Manager username"></div></div><div class="field"><label>Manager Email</label><input id="newStoreManagerEmail" type="email" required placeholder="manager@example.com"></div><div class="field"><label>Temporary Manager Password</label><input id="newStoreManagerPassword" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"></div><button id="createStoreBtn" type="submit">Create Store & Manager</button><div id="createStoreMessage" class="muted" style="margin-top:12px;font-size:13px"></div></form></div><div class="card" style="margin-top:16px"><div class="between"><h3>Stores</h3><button class="secondary" type="button" onclick="loadSuperAdminStores()">Refresh</button></div><div id="superAdminStores"><div class="muted">Loading stores…</div></div></div><div id="superAdminReportArea" class="section"></div>`;
  loadSuperAdminStores();
+}
+async function superAdminAccountPage(){
+ if(current?.role!=='super_admin')return;
+ document.getElementById('navs').innerHTML='<button class="nav" type="button" onclick="superAdminPage()">▦ Store Management</button><button class="nav active" type="button" onclick="superAdminAccountPage()">⚙ My Account</button>';
+ let email='';
+ try{const {data}=await sb.auth.getUser();email=data?.user?.email||''}catch(e){}
+ document.getElementById('view').innerHTML=`<div class="card"><h3>Super Admin Account Settings</h3><p class="muted">Change your Super Admin login password. The new password will be saved to Supabase Cloud Authentication and used on every device.</p><div class="field"><label>Login Email</label><input value="${esc(email)}" readonly></div><div class="field"><label>New Password</label><input id="newSuperAdminPass" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"></div><div class="field"><label>Confirm New Password</label><input id="confirmSuperAdminPass" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter new password"></div><button id="saveSuperAdminPassBtn" type="button" onclick="updateSuperAdminPassword()">Save Password</button><div id="superAdminAccountMessage" class="muted" style="margin-top:12px;font-size:13px"></div></div>`;
+}
+async function updateSuperAdminPassword(){
+ if(current?.role!=='super_admin')return;
+ const pass=document.getElementById('newSuperAdminPass')?.value||'',confirmPass=document.getElementById('confirmSuperAdminPass')?.value||'',msg=document.getElementById('superAdminAccountMessage'),btn=document.getElementById('saveSuperAdminPassBtn');
+ if(pass.length<8){msg.textContent='Password must be at least 8 characters.';return}
+ if(pass!==confirmPass){msg.textContent='New passwords do not match.';return}
+ btn.disabled=true;msg.textContent='Updating password securely in Supabase Cloud…';
+ try{
+  const {data,error}=await sb.auth.updateUser({password:pass});
+  if(error)throw error;
+  if(!data?.user)throw new Error('Supabase did not confirm the password update.');
+  document.getElementById('newSuperAdminPass').value='';
+  document.getElementById('confirmSuperAdminPass').value='';
+  msg.textContent='Password changed successfully in Cloud. Use the new password next time you sign in on any device.';
+ }catch(e){msg.textContent=e.message||'Could not update password.'}
+ finally{btn.disabled=false}
 }
 async function createTeamGuardStore(event){
  event.preventDefault();
